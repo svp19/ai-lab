@@ -3,6 +3,7 @@
 using namespace std;
 
 pii zero = {0, 0};
+pii nil = {-1, -1};
 
 struct node{
     char value;
@@ -10,7 +11,7 @@ struct node{
     pii parent;
     int depth;
     node(){
-        parent = make_pair(0,0);
+        parent = zero;
         depth = 0;
         visited = false;
         value = -1;
@@ -19,12 +20,23 @@ struct node{
 
 
 class Maze{
-    node ** G; //Graph
-    int M, N; // Dimensions
+    vector<vector<node>> G; //Graph
+    int M, N; //Dimensions
+    int algo; //0 -> bfs, 1 -> dfs, 2 -> dfid  
 
 
     node* get_node(pii pos){
         return &(G[pos.first][pos.second]);
+    }
+
+
+    void reset_nodes(){
+        for(int i=0; i<M; ++i)
+            for(int j=0; j<N; ++j){
+                G[i][j].parent = zero;
+                G[i][j].depth = 0;
+                G[i][j].visited = false;
+            }
     }
 
 
@@ -47,6 +59,8 @@ class Maze{
 
 
     bool goalTest(pii pos){
+        if(pos==nil)
+            return false;
         return (G[pos.first][pos.second].value == '*');
     }
 
@@ -99,6 +113,10 @@ class Maze{
             // Mark source visited
             get_node(source)->visited = true;
 
+            // Mark depth of node using parent
+            if(source != zero)
+                get_node(source)->depth = get_node(get_node(source)->parent)->depth + 1;
+            
             // Goal test
             if(goalTest(source))
                 return source;
@@ -119,17 +137,63 @@ class Maze{
     }
 
     pii dfid(){
-        int bound = -1;
-        while(bound++){
+        int bound = 0;
+        while(true){
+            reset_nodes();
             pii goal = dfs(bound);
-            if(goalTest(goal))
+            if(goalTest(goal)){
                 return goal;
+            }
+            bound++;
+            if(bound>=25)
+                break;
         } 
     }
 
+    bool is_boundary(string line){
+        line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+        if(line.empty() || line[0]!='+')
+            return false;
+        for(int i=1; i<line.size()-2; i = i+3){
+            if(line[i] != '-' || line[i+1] != '-')
+                return false;
+            if(line[i+2] != '+')
+                return false;
+        }
+        return true;
+    }
 
 public:
-    void printOutput(int algo){
+    void input(){
+        string line;
+        vector<string> lines;
+        cin >> algo;
+        cin.ignore();
+        // read first line
+        getline(cin, line, '\n');
+        lines.push_back(line);
+        
+        while(true){
+            getline(cin, line, '\n');
+            lines.push_back(line);
+            if(is_boundary(line))
+                break;
+        }
+
+        M = lines.size();
+        N = line.size();
+        for(string line: lines){
+            vector<node> v;
+            for(char c: line){
+                node n;
+                n.value = c;
+                v.push_back(n);
+            }
+            G.push_back(v);
+        }
+    }
+
+    void printOutput(){
         pii goal;
         switch(algo){
             case 0:{
@@ -154,17 +218,20 @@ public:
         int num_states = 0;
         for(int i=0; i<M; ++i)
             for(int j=0; j<N; ++j)
-                num_states ++;
+                if(G[i][j].visited)
+                    num_states ++;
         cout << num_states << "\n" ;
 
         // length of path found
-        int len = 0;
+        int len = 1;
         pii pos = goal;
+        get_node(pos)->value = '0';
         while(pos != zero){
             pos = get_node(pos)->parent;
             get_node(pos)->value = '0'; // colour Graph
             len ++;
         }
+        cout << len << "\n";
 
         // maze
         for(int i=0; i<M; ++i){
@@ -180,5 +247,7 @@ public:
 
 int main(){
     Maze M;
+    M.input();
+    M.printOutput();
     return 0;
 }
