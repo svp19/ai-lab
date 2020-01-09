@@ -45,6 +45,8 @@ Graph :: Graph(string filename){
     int algo;
     fin>>algo;
     row = 0;
+    num_visited = 0;
+    path_length = 0;
     while(getline(fin, str))
         if(str.length()){
             col = str.length();
@@ -88,14 +90,15 @@ void Graph:: markGraph(pii index){
 }
 
 vector<pii> Graph:: moveGen(pii pos){
-    int rot_x[] = {-1, 0, 1, 0};
-    int rot_y[] = {0, 1, 0, -1};
+                // down up right left
+    int rot_x[] = {0, 0, 1, -1};
+    int rot_y[] = {1, -1, 0, 0};
     vector<pii> res;
     for(int i=0; i<4; i++){
-        int x = pos.first + rot_x[i];
-        int y = pos.second + rot_y[i];
-        if(x>=0 && x<row && y>=0 && y<col)
-            res.push_back(make_pair(x, y));
+        int y = pos.first + rot_y[i];
+        int x = pos.second + rot_x[i];
+        if(y>=0 && y<row && x>=0 && x<col)
+            res.push_back(make_pair(y, x));
     }
     return res;
 }
@@ -111,7 +114,6 @@ pii Graph:: bfs(){
     queue<pii> Q;
     Q.push(make_pair(0,0));
     G[0][0].visited = true;
-    num_visited = 0;
     while( !Q.empty() ){
         // pop and mark visited
         pii iter_index = Q.front();
@@ -143,8 +145,7 @@ pii Graph:: bfs(){
 pii Graph:: dfs(int db){
     stack<pii> S;
     S.push(make_pair(0,0));
-    // G[0][0].visited = db;
-    num_visited = 0;
+    G[0][0].visited = db;
     while( !S.empty() ){
         // pop and mark visited
         pii iter_index = S.top();
