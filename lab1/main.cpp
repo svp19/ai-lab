@@ -143,7 +143,7 @@ pii Graph:: bfs(){
 pii Graph:: dfs(int db){
     stack<pii> S;
     S.push(make_pair(0,0));
-    G[0][0].visited = db;
+    // G[0][0].visited = db;
     num_visited = 0;
     while( !S.empty() ){
         // pop and mark visited
@@ -163,10 +163,14 @@ pii Graph:: dfs(int db){
         vector<pii> iter_neighbours = moveGen(iter_index);
         for(pii neighbour : iter_neighbours){
             Node &neighbour_node = G[neighbour.first][neighbour.second];
-
-            if(neighbour_node.visited != db &&  //not visited
-                (neighbour_node.value == ' ' || neighbour_node.value=='*') //free node
-            ){
+            bool isEmpty = (neighbour_node.value == ' ' || neighbour_node.value=='*');
+            bool isVistable = ( neighbour_node.visited != db || neighbour_node.depth > iter.depth + 1);
+            /*
+                - Every node is marked visited when it is pushed to the stack
+                - If a node is pushed while it is already in the stack, it would mean
+                  that node is a part of a negative cycle (contradiction)
+            */
+            if(isEmpty && isVistable){
                 neighbour_node.visited = db;
                 neighbour_node.depth = iter.depth + 1;
                 neighbour_node.parent = iter_index;
