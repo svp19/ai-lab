@@ -6,25 +6,23 @@ using namespace std;
 struct Node{
     static int stamp;
     char value;
-    bool visited;
-    int color;
+    int visited;
     int depth;
     pii parent;
     Node(){
         depth = INT32_MAX;
         value = ' ';
         visited = false;
-        color = 0;
         parent = make_pair(-1, -1);
     }
-    int getColor(int db){
-        if(db==stamp) return color;
-        return 0;
-    }
-    int getDepth(int db){
-        if(db==stamp) return depth;
-        return INT32_MAX;
-    }
+    // int getColor(int db){
+    //     if(db==stamp) return color;
+    //     return 0;
+    // }
+    // int getDepth(int db){
+    //     if(db==stamp) return depth;
+    //     return INT32_MAX;
+    // }
 };
 
 int Node:: stamp = -1;
@@ -200,9 +198,9 @@ pii Graph:: dfid(){
 pii Graph::dfid_subroutine(pii source, int db, int stamp){
     num_visited++;
     // source is closed
-    // mark stamp to know the val of depth bound at function call
+    // mark stamp to know the val of depth bound at root function call
     Node & iter =  G[source.first][source.second];
-    iter.color = stamp;
+    iter.visited = stamp;
     if(goalTest(source))
         return source;
     
@@ -213,14 +211,16 @@ pii Graph::dfid_subroutine(pii source, int db, int stamp){
         //continue if you cant go there
         if(!(neb.value == ' ' || neb.value=='*')) continue; 
 
-        if(neb.color == stamp && iter.depth + 1 >= neb.depth) continue;
+        if(neb.visited == stamp && iter.depth + 1 >= neb.depth) continue;
         neb.depth = iter.depth + 1;
         neb.parent = source;
+        
         pii goal = dfid_subroutine(neb_index, db-1, stamp);
         if(goalTest(goal))return goal;
     }
     return {-1,-1};
 }
+
 int main(int argc, char** argv){
     if(argc != 2){
         cout<<"Usage ./run.sh <filename>"<<endl;

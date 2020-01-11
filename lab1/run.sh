@@ -1,3 +1,3 @@
 #!/bin/bash
-# g++ main.cpp;
+g++ main.cpp;
 ./a.out $1;
