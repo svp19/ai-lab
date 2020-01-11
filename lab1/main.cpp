@@ -4,20 +4,30 @@ using namespace std;
 #define pii pair<int, int>
 
 struct Node{
+    static int stamp;
     char value;
-    int visited;
+    bool visited;
     int color;
     int depth;
     pii parent;
     Node(){
-        depth = 0;
+        depth = INT32_MAX;
         value = ' ';
-        visited = 0;
+        visited = false;
         color = 0;
         parent = make_pair(-1, -1);
     }
+    int getColor(int db){
+        if(db==stamp) return color;
+        return 0;
+    }
+    int getDepth(int db){
+        if(db==stamp) return depth;
+        return INT32_MAX;
+    }
 };
 
+int Node:: stamp = -1;
 class Graph{
     vector<vector<Node>> G;
     int row, col; 
@@ -28,9 +38,10 @@ public:
     Graph(string filename);
     
     pii bfs();
-    pii dfs(int db=-1);
+    pii dfs();
     pii dfid();
-
+    pii dfid_subroutine(pii source, int db, int stamp);
+    
     //helpers
     void showGraph();
     void markGraph(pii index);
@@ -130,7 +141,7 @@ pii Graph:: bfs(){
         for(pii neighbour : iter_neighbours){
             Node &neighbour_node = G[neighbour.first][neighbour.second];
 
-            if(neighbour_node.visited==0 &&  //not visited
+            if( !neighbour_node.visited &&  //not visited
                 (neighbour_node.value == ' ' || neighbour_node.value=='*') //free node
             ){
                 neighbour_node.visited = true;
@@ -142,40 +153,33 @@ pii Graph:: bfs(){
     return {-1,-1};
 }
 
-pii Graph:: dfs(int db){
+pii Graph:: dfs(){
     stack<pii> S;
     S.push(make_pair(0,0));
-    G[0][0].visited = db;
+    G[0][0].visited = true;
     while( !S.empty() ){
         // pop and mark visited
         pii iter_index = S.top();
         S.pop();
         Node &iter = G[iter_index.first][iter_index.second];
+        // printf("index (%d, %d)-> %c, depth:%d\n", iter_index.first, iter_index.second, iter.value, iter.depth);
         num_visited ++;
-
         // check if we reached goal!
         if(goalTest(iter_index)) return iter_index;
 
-        //check if we reached depth bound
-        //then this node has no neighbours 
-        if(iter.depth == db) continue;
-
         //otherwise iter over neighbours
-        vector<pii> iter_neighbours = moveGen(iter_index);
-        for(pii neighbour : iter_neighbours){
-            Node &neighbour_node = G[neighbour.first][neighbour.second];
-            bool isEmpty = (neighbour_node.value == ' ' || neighbour_node.value=='*');
-            bool isVistable = ( neighbour_node.visited != db || neighbour_node.depth > iter.depth + 1);
-            /*
-                - Every node is marked visited when it is pushed to the stack
-                - If a node is pushed while it is already in the stack, it would mean
-                  that node is a part of a negative cycle (contradiction)
-            */
-            if(isEmpty && isVistable){
-                neighbour_node.visited = db;
-                neighbour_node.depth = iter.depth + 1;
-                neighbour_node.parent = iter_index;
-                S.push(neighbour);
+        for(pii neb_index : moveGen(iter_index)){
+            Node &neb = G[neb_index.first][neb_index.second];
+            // printf("At (%d %d)\n", neb_index.first, neb_index.second );
+            //check if the node is boundary
+            bool isEmpty = (neb.value == ' ' || neb.value=='*');
+            if(!isEmpty) continue;
+
+            // printf("Isvisitable: %d for (%d %d)\n", isVisitable, neb_index.first, neb_index.second );
+            if(!neb.visited){
+                neb.visited = true;
+                neb.parent = iter_index;
+                S.push(neb_index);
             }
         }
     }
@@ -185,18 +189,53 @@ pii Graph:: dfs(int db){
 pii Graph:: dfid(){
     pii goal = {-1, -1};
     int db = 0;
-    while(! goalTest(goal)){
-        goal = dfs(db++);
+    while(! goalTest(goal) && db<30){
+        G[0][0].depth = 0;
+        goal = dfid_subroutine({0,0}, db, db++);
+        // break;
     }
     return goal;
 }
 
+pii Graph::dfid_subroutine(pii source, int db, int stamp){
+    num_visited++;
+    // source is closed
+    // mark stamp to know the val of depth bound at function call
+    Node & iter =  G[source.first][source.second];
+    iter.color = stamp;
+    if(goalTest(source))
+        return source;
+    
+    if(db!=0)
+    for(pii neb_index : moveGen(source)){
+        Node &neb = G[neb_index.first][neb_index.second];
+
+        //continue if you cant go there
+        if(!(neb.value == ' ' || neb.value=='*')) continue; 
+
+        if(neb.color == stamp && iter.depth + 1 >= neb.depth) continue;
+        neb.depth = iter.depth + 1;
+        neb.parent = source;
+        pii goal = dfid_subroutine(neb_index, db-1, stamp);
+        if(goalTest(goal))return goal;
+    }
+    return {-1,-1};
+}
 int main(int argc, char** argv){
     if(argc != 2){
         cout<<"Usage ./run.sh <filename>"<<endl;
         return 1;
     }
 
-    Graph G(argv[1]);
+    Graph solve(argv[1]);
     return 0;
 }
+
+// //show stack
+// pii *end = &S.top() + 1;
+// pii *beg = end - S.size(); 
+// vector<pii> stack_contents(beg, end);
+// for(pii index : stack_contents)
+//     printf("(%d %d), ", index.first, index.second);
+// cout<<endl;
+// fflush(stdout);
