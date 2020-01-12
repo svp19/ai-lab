@@ -278,8 +278,7 @@ public:
                 if(G[i][j].value == '0')
                     G[i][j].value = ' ';
             }
-            if(i < M-1)
-                fout << "\n";
+            fout << "\n";
         }
     }
 };
