@@ -47,7 +47,7 @@ class Maze{
     vector<pii> moveGen(pii pos, bool rev=false){
         vector<pii> neighbours; 
         int x, y;
-        // Rotation -> DOWN > UP > RIGHT > LEFT
+        // Rotation -> DOWN < UP < RIGHT < LEFT
         int rot_x[] = {1, -1, 0, 0};
         int rot_y[] = {0, 0, 1, -1};
         for(int i=0; i<4; ++i){
@@ -59,7 +59,7 @@ class Maze{
                 }
             }
         }
-        if(rev)
+        if(rev) // reverse order
             std::reverse(neighbours.begin(), neighbours.end());
         return neighbours;
     }
@@ -78,15 +78,17 @@ class Maze{
 
         // Push Source
         Q.push(zero);    
-
+        nodes_visited = 0;
+        get_node(zero)->visited = true;
         while(!Q.empty()){
 
             // Pop source
             pii source = Q.front();
             Q.pop();
 
+            nodes_visited ++;
             // Mark source visited
-            get_node(source)->visited = true;
+            // get_node(source)->visited = true;
 
             // Goal test
             if(goalTest(source))
@@ -96,6 +98,7 @@ class Maze{
             vector<pii> neighbours = moveGen(source);
             for(pii n: neighbours){
                 if(!get_node(n)->visited){
+                    get_node(n)->visited = true;
                     G[n.first][n.second].parent = source;
                     Q.push(n);
                 }
@@ -116,7 +119,6 @@ class Maze{
 
             // Pop source
             pii source = S.top();
-            // cout << "Exploring " << source.first << ", " << source.second << "\n";
             S.pop();
 
             // Mark source visited
@@ -197,17 +199,19 @@ class Maze{
     }
 
 public:
-    void input(){
+    void input(string filename){
         string line;
         vector<string> lines;
-        cin >> algo;
-        cin.ignore();
+        ifstream fin(filename);
+
+        fin >> algo;
+        fin.ignore();
         // read first line
-        getline(cin, line, '\n');
+        getline(fin, line, '\n');
         lines.push_back(line);
         
         while(true){
-            getline(cin, line, '\n');
+            getline(fin, line, '\n');
             lines.push_back(line);
             if(is_boundary(line))
                 break;
@@ -226,38 +230,35 @@ public:
         }
     }
 
-    void printOutput(){
+    void printOutput(string filename){
+        ofstream fout(filename);
         pii goal;
+        int num_states = 0; // number of states
         switch(algo){
-            case 0:{
-                goal = bfs();
+            case 0: {
+                goal = bfs();   
+                num_states = nodes_visited;       
                 break;
             }
-            case 1:{
+            case 1: {
                 goal = dfs();
+                //count number of states
+                for(int i=0; i<M; ++i)
+                    for(int j=0; j<N; ++j)
+                        if(G[i][j].visited)
+                            num_states ++;
                 break;
             }
-            case 2:{
-                goal = dfid();
+            case 2: {
+                goal = dfid();  
+                num_states = nodes_visited -1;
                 break;
             }
-            default: {
-                cout << "Invalid input.\n";
-                break;
-            }          
+            default: cout << "Invalid input.\n";    break;
         }
 
-        // number of states
-        int num_states = 0;
-        if(algo != 2){
-            for(int i=0; i<M; ++i)
-                for(int j=0; j<N; ++j)
-                    if(G[i][j].visited)
-                        num_states ++;
-        } else {
-            num_states = nodes_visited - 1;
-        }
-        cout << num_states << "\n" ;
+        // Print num_states
+        fout << num_states << "\n" ;
 
         // length of path found
         int len = 1;
@@ -268,23 +269,31 @@ public:
             get_node(pos)->value = '0'; // colour Graph
             len ++;
         }
-        cout << len << "\n";
+        fout << len << "\n";
 
         // maze
         for(int i=0; i<M; ++i){
             for(int j=0; j<N; ++j){
-                cout << G[i][j].value;
+                fout << G[i][j].value;
                 if(G[i][j].value == '0')
                     G[i][j].value = ' ';
             }
-            cout << "\n";
+            if(i < M-1)
+                fout << "\n";
         }
     }
 };
 
-int main(){
+int main(int argc, char** argv){
+    
+    if(argc != 2){
+        cout<<"Usage ./run.sh <filename>"<<endl;
+        return 1;
+    }
+
     Maze M;
-    M.input();
-    M.printOutput();
+    M.input(argv[1]);
+    M.printOutput("output.txt");
+    
     return 0;
 }
