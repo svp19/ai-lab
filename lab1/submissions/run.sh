@@ -1,3 +1,3 @@
 #!/bin/bash
-g++ main.cpp;
-./a.out $1;
+g++ main.cpp -o deploy.ai;
+./deploy.ai $1 > output.txt;

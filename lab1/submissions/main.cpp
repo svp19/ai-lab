@@ -43,7 +43,7 @@ public:
     //helpers
     void showGraph();
     void markGraph(pii index);
-    vector<pii> moveGen(pii pos);
+    vector<pii> moveGen(pii pos, bool rev);
     bool goalTest(pii pos);
 };
 
@@ -84,9 +84,6 @@ Graph :: Graph(string filename){
 void Graph:: showGraph(){
     for(vector<Node> Grow : G){
         for(Node iter: Grow)
-            if(iter.visited && iter.value != '0')
-                cout << '1';
-            else
                 cout<<iter.value;
         cout<<endl;
     }
@@ -101,7 +98,7 @@ void Graph:: markGraph(pii index){
     }
 }
 
-vector<pii> Graph:: moveGen(pii pos){
+vector<pii> Graph:: moveGen(pii pos, bool rev=false){
                 // down up right left
     int rot_x[] = {0, 0, 1, -1};
     int rot_y[] = {1, -1, 0, 0};
@@ -112,6 +109,8 @@ vector<pii> Graph:: moveGen(pii pos){
         if(y>=0 && y<row && x>=0 && x<col)
             res.push_back(make_pair(y, x));
     }
+    if(rev) // reverse order
+            std::reverse(res.begin(), res.end());
     return res;
 }
 
@@ -169,7 +168,7 @@ pii Graph:: dfs(){
         if(goalTest(iter_index)) return iter_index;
 
         //otherwise iter over neighbours
-        for(pii neb_index : moveGen(iter_index)){
+        for(pii neb_index : moveGen(iter_index, true)){
             Node &neb = G[neb_index.first][neb_index.second];
             // printf("At (%d %d)\n", neb_index.first, neb_index.second );
             //check if the node is boundary
