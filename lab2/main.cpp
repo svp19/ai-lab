@@ -46,6 +46,20 @@ class JobAllocation{
         return cost[pos.first][pos.second];
     }
 
+    
+    int getScore(pii pos){
+        if(pos == nil)
+            return -1;
+        return getNode(pos).score;
+    }
+
+
+    int getPathCost(pii pos){
+        if(pos == nil)
+            return 0;
+        return getNode(pos).path_cost;
+    }
+
 
     vector<pii> getPath(pii pos){
         vector<pii> path;
@@ -66,18 +80,27 @@ class JobAllocation{
          * @return:
          *          Boolean of whether state is equal to goal or not.
          */
+        if(state.empty())
+            return false;
+        
         set<int> uniquePerson, uniqueJob;
         for(pii pair: state){
             if(pair.first == -1 || pair.second == -1) 
                 return false;
             uniquePerson.insert(pair.first);
             uniqueJob.insert(pair.second);
+            printf("{%d, %d}, ", pair.first, pair.second);
         }
+
+        // cout << (uniqueJob.size() == N);
+        // cout << (uniquePerson.size() == N);
+                
+        cout << (getPathCost(state.front())) << "->" << constraint << "\n\n";
 
         return (
             (uniqueJob.size() == N) && 
             (uniquePerson.size() == N) && 
-            (getNode(state.back()).path_cost < constraint)
+            (getNode(state.front()).path_cost < constraint)
         );
     }
 
@@ -107,6 +130,7 @@ class JobAllocation{
         }
         return nextMoves;
     }
+
 
     int lookAhead(vector<pii> nextMoves, pii pos){
         int i = nextMoves.front().first + 1;
@@ -193,10 +217,8 @@ class JobAllocation{
                 if(r == nil) return false;
                 return (getNode(l).score > getNode(r).score);
         });
-
         // Push Source,
         Q.push(nil);
-
         while(!Q.empty()){
 
             // Get top of queue
@@ -204,11 +226,49 @@ class JobAllocation{
             Q.pop();
 
             // Mark visited
-            int acc_cost = 0; // accumulated cost from start to source node
             if(source != nil){
-                printf("x: %d, y: %d, Score = %d\n", source.first, source.second, getNode(source).score);
                 getNode(source).visited = true;
-                acc_cost = getNode(source).path_cost;
+                printf("x: %d, y: %d, Score = %d\n", source.first, source.second, getNode(source).path_cost);
+            }
+            
+            // Test Goal
+            if(goalTest(getPath(source))){
+                cout << "Goal Found\n";
+                return source;
+            }
+
+            // Explore successor moves
+            for(pii move: heuristic(moveGen(source), "greedy")){
+                if(!getNode(move).visited){
+                    getNode(move).parent = source;
+                    getNode(move).path_cost = getPathCost(source) + getCost(move);
+                    Q.push(move);
+                }
+            }
+        }
+        return nil;
+    }
+
+
+    pii hillClimbing(){
+        priority_queue<pii, vector<pii>, function<bool(pii,pii)>> Q( [this](pii l, pii r) -> bool {// Lambda Comparator Constructor for function<>
+                // Min Priority Queue based on score
+                if(l == nil) return true;
+                if(r == nil) return false;
+                return (getNode(l).score > getNode(r).score);
+        });
+        // Push Source,
+        Q.push(nil);
+        while(!Q.empty()){
+
+            // Get top of queue
+            pii source = Q.top();
+            Q.pop();
+
+            // Mark visited
+            if(source != nil){
+                
+                printf("x: %d, y: %d, Score = %d\n", source.first, source.second, getNode(source).path_cost);
             }
             
             // Test Goal
@@ -218,10 +278,12 @@ class JobAllocation{
             // Explore successor moves
             for(pii move: heuristic(moveGen(source), "lookahead")){
                 if(!getNode(move).visited){
+                    getNode(move).visited = true;
                     getNode(move).parent = source;
-                    getNode(move).path_cost = acc_cost + getCost(move);
+                    getNode(move).path_cost = getPathCost(source) + getCost(move);
                     Q.push(move);
                 }
+                break;
             }
         }
         return nil;
@@ -252,6 +314,7 @@ public:
 
     void testPrint(){
         pii sol = bestFirstSearch(); 
+        // pii sol = hillClimbing(); 
         printf("Total Cost: %d\n", getNode(sol).path_cost);
     }
 };

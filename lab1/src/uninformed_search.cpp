@@ -240,7 +240,7 @@ public:
                 num_states = nodes_visited;       
                 break;
             }
-            case 1: {
+            case` 1: {
                 goal = dfs();
                 //count number of states
                 for(int i=0; i<M; ++i)

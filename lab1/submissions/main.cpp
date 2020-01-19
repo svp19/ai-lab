@@ -84,6 +84,9 @@ Graph :: Graph(string filename){
 void Graph:: showGraph(){
     for(vector<Node> Grow : G){
         for(Node iter: Grow)
+            if(iter.visited && iter.value != '0')
+                cout << '1';
+            else
                 cout<<iter.value;
         cout<<endl;
     }
