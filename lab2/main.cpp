@@ -97,12 +97,12 @@ class JobAllocation{
         // cout << (uniqueJob.size() == N);
         // cout << (uniquePerson.size() == N);
                 
-        cout << (getPathCost(state.front())) << "->" << constraint << "\n\n";
+        cout << (getPathCost(state.front())) << "<=" << constraint << "\n\n";
 
         return (
             (uniqueJob.size() == N) && 
             (uniquePerson.size() == N) && 
-            (getNode(state.front()).path_cost < constraint)
+            (getNode(state.front()).path_cost <= constraint)
         );
     }
 
@@ -117,7 +117,13 @@ class JobAllocation{
          * @return: 
          *          vector<pair<int, int>>: vector of next possible positions
          */
-
+        //
+        vector<pii> nextMoves;
+        if(pos.first >= N-1){
+            nextMoves.clear();
+            return nextMoves;
+        }
+        
         // Mark jobs already taken
         set<int> jobsTaken;
         for(pii node: getPath(pos)){
@@ -125,7 +131,6 @@ class JobAllocation{
         }
 
         // Search in remaining jobs
-        vector<pii> nextMoves;
         for(int i=0; i<N; ++i){
             if(jobsTaken.find(i) == jobsTaken.end()) //if job not taken
                 nextMoves.push_back(make_pair(pos.first+1, i));
@@ -158,6 +163,13 @@ class JobAllocation{
 
 
     vector<pii> heuristic(vector<pii> nextMoves, string h_type="greedy"){
+        printf("nextMoves: ");
+        for(pii p: nextMoves){
+            printf("{%d, %d}, ", p.first, p.second);
+        }
+        cout << "\n";
+
+
         // Greedy Heuristic: chooses minimum from nextMoves //
         if(h_type == "greedy"){ 
             
@@ -243,7 +255,7 @@ class JobAllocation{
 
             // Mark visited
             if(source != nil){
-                // getNode(source).visited = true;
+                getNode(source).visited = true;
                 printf("x: %d, y: %d, Score = %d\n", source.first, source.second, getNode(source).path_cost);
             }
             
@@ -255,11 +267,11 @@ class JobAllocation{
 
             // Explore successor moves
             for(pii move: heuristic(moveGen(source), "greedy")){
-                // if(!getNode(move).visited){
+                if(!getNode(move).visited){
                     getNode(move).parent = source;
                     getNode(move).path_cost = getPathCost(source) + getCost(move);
                     Q.push(move);
-                // }
+                }
             }
         }
         return nil;
@@ -307,8 +319,8 @@ class JobAllocation{
 
 
     vector<pii> beam(vector<pii> nextMoves, int beam_width){
-        if(beam_width > nextMoves.size())
-            beam_width = nextMoves.size();
+        if(beam_width >= nextMoves.size())
+            return nextMoves;
             
         cout << "Beam: ";
         for(pii pair: vector<pii>(&nextMoves[0], &nextMoves[beam_width])){
@@ -391,7 +403,7 @@ public:
     void testPrint(){
         // pii sol = bestFirstSearch(); 
         // pii sol = hillClimbing(); 
-        pii sol = beamSearch(N);
+        pii sol = beamSearch(N, 13);
         printf("Total Cost: %d\n", getNode(sol).path_cost);
     }
 };
