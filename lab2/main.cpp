@@ -376,6 +376,47 @@ class JobAllocation{
     }
 
 
+    pii vnd(int constraint=INT_MAX){
+        priority_queue<pii, vector<pii>, function<bool(pii,pii)>> Q( [this](pii l, pii r) -> bool {// Lambda Comparator Constructor for function<>
+                // Min Priority Queue based on score
+                if(l == nil) return true;
+                if(r == nil) return false;
+                return (getNode(l).score > getNode(r).score);
+        });
+        // Push Source,
+        Q.push(nil);
+        while(!Q.empty()){
+
+            // Get top of queue
+            pii source = Q.top();
+            Q.pop();
+
+            // Mark visited
+            if(source != nil){
+                
+                printf("x: %d, y: %d, Score = %d\n", source.first, source.second, getNode(source).path_cost);
+            }
+            
+            // Test Goal
+            if(goalTest(getPath(source)))
+                return source;
+
+            // Explore successor moves
+            for(pii move: heuristic(moveGen(source), "lookahead")){
+                if(!getNode(move).visited){
+                    getNode(move).visited = true;
+                    getNode(move).parent = source;
+                    getNode(move).path_cost = getPathCost(source) + getCost(move);
+                    Q.push(move);
+                }
+                break;
+            }
+        }
+        return nil;
+    }
+
+
+
 
 public:
     void input(){
