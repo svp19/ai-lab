@@ -278,43 +278,95 @@ class JobAllocation{
     }
 
 
-    pii hillClimbing(){
-        priority_queue<pii, vector<pii>, function<bool(pii,pii)>> Q( [this](pii l, pii r) -> bool {// Lambda Comparator Constructor for function<>
-                // Min Priority Queue based on score
-                if(l == nil) return true;
-                if(r == nil) return false;
-                return (getNode(l).score > getNode(r).score);
-        });
-        // Push Source,
-        Q.push(nil);
-        while(!Q.empty()){
+    // pii hillClimbing(){
+    //     priority_queue<pii, vector<pii>, function<bool(pii,pii)>> Q( [this](pii l, pii r) -> bool {// Lambda Comparator Constructor for function<>
+    //             // Min Priority Queue based on score
+    //             if(l == nil) return true;
+    //             if(r == nil) return false;
+    //             return (getNode(l).score > getNode(r).score);
+    //     });
+    //     // Push Source,
+    //     Q.push(nil);
+    //     while(!Q.empty()){
 
-            // Get top of queue
-            pii source = Q.top();
-            Q.pop();
+    //         // Get top of queue
+    //         pii source = Q.top();
+    //         Q.pop();
 
-            // Mark visited
-            if(source != nil){
+    //         // Mark visited
+    //         if(source != nil){
                 
-                printf("x: %d, y: %d, Score = %d\n", source.first, source.second, getNode(source).path_cost);
-            }
+    //             printf("x: %d, y: %d, Score = %d\n", source.first, source.second, getNode(source).path_cost);
+    //         }
             
-            // Test Goal
-            if(goalTest(getPath(source)))
-                return source;
+    //         // Test Goal
+    //         if(goalTest(getPath(source)))
+    //             return source;
 
-            // Explore successor moves
-            for(pii move: heuristic(moveGen(source), "lookahead")){
-                if(!getNode(move).visited){
-                    getNode(move).visited = true;
-                    getNode(move).parent = source;
-                    getNode(move).path_cost = getPathCost(source) + getCost(move);
-                    Q.push(move);
-                }
-                break;
+    //         // Explore successor moves
+    //         for(pii move: heuristic(moveGen(source), "lookahead")){
+    //             if(!getNode(move).visited){
+    //                 getNode(move).visited = true;
+    //                 getNode(move).parent = source;
+    //                 getNode(move).path_cost = getPathCost(source) + getCost(move);
+    //                 Q.push(move);   
+    //             }
+    //             break;
+    //         }
+    //     }
+    //     return nil;
+    // }
+
+int h(vector<int> node){
+    int sum = 0;
+    for(int i=0; i<node.size(); ++i)
+        sum += getCost({i, node[i]});        
+    return sum;
+}
+
+
+vector<int> headSortMovegen(vector<int> node){
+    int cost = h(node);
+    pii exchangePos = nil;
+
+    // For all pairs
+    for(int i=0; i<N-1; ++i){
+        for(int j=i+1; j<N; ++j){
+            int newCost = cost - getCost({i, node[i]}) - getCost({j, node[j]}) + getCost({i, node[j]}) + getCost({j, node[i]});
+            if(newCost < cost){
+                cost = newCost;
+                exchangePos = {i, j};
             }
         }
-        return nil;
+    }
+
+    if(exchangePos != nil)
+        swap(node[exchangePos.first], node[exchangePos.second]);
+        
+    return node;
+}
+
+
+vector<int> hillClimbing(){
+        
+        vector<int> node;
+        
+        // Init
+        for(int i=0; i<N; ++i)
+            node.push_back(i);
+        
+        vector<int> newNode = headSortMovegen(node);
+
+        while(h(newNode) < h(node)){
+            node = newNode;
+            
+            for(int i: node)
+                cout << i << " ";
+            cout << "\n";
+
+            newNode = headSortMovegen(node);
+        }
+        return newNode;
     }
 
 
@@ -443,9 +495,15 @@ public:
 
     void testPrint(){
         // pii sol = bestFirstSearch(); 
-        // pii sol = hillClimbing(); 
-        pii sol = beamSearch(N, 13);
-        printf("Total Cost: %d\n", getNode(sol).path_cost);
+        // pii sol = beamSearch(N, 13);
+        // printf("Total Cost: %d\n", getNode(sol).path_cost);
+        vector<int> sol = hillClimbing(); 
+        for(int i=0; i<sol.size(); ++i){
+            ;
+            printf("{%d, %d}: %d, ", i, sol[i], getCost({i, sol[i]}));
+        }
+        cout << "\n";
+        cout << "Total cost = " << h(sol) << "\n";
     }
 };
 
