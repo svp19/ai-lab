@@ -32,6 +32,8 @@ class JobAllocation{
     vector<vector<Node>> G;
     int N;
 
+    set<string> open, closed; 
+
     // cost:   Jobs ->
     // Person
     // |
