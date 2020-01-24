@@ -103,29 +103,11 @@ class JobAllocation{
             uniqueJob.insert(job);
         }
 
-        // cout << (uniqueJob.size() == N);
-        // cout << (uniquePerson.size() == N);
         return (
             (uniqueJob.size() == N) && 
             (h(state) <= constraint)
         );
     }
-
-
-    // vector<vector<int>> movegen(vector<int> node){
-    //     int cost = h(node);
-    //     vector<vector<int>> neighbours;
-
-    //     // For all pairs
-    //     for(int i=0; i<N-1; ++i){
-    //         for(int j=i+1; j<N; ++j){
-    //             vector<int> neighbour = node;
-    //             swap(neighbour[i], neighbour[j]);
-    //             neighbours.push_back(neighbour);
-    //         }
-    //     }            
-    //     return neighbours;
-    // }
     
 
     vector<vector<int>> movegen(vector<int> node, int density=2){
@@ -245,8 +227,7 @@ class JobAllocation{
                 }
             }
         }
-        return source;
-        
+        return source;   
     }
 
 
@@ -261,6 +242,71 @@ class JobAllocation{
         }
         return node;
     }
+
+
+    vector<vector<int>> beam(vector<vector<int>> nodes, int beam_width=2){
+        
+        if(nodes.empty())
+            return nodes;
+
+        // Sort based on heuristic -> h()    
+        sort(nodes.begin(), nodes.end(), [this](const vector<int>& l, const vector<int>& r){
+            return h(l) < h(r);
+        });
+
+        // Make beam, atmost beamWidth elements
+        vector<vector<int>> filtered_nodes;
+        filtered_nodes.push_back(nodes[0]);
+
+        for(int bw=1; (bw < beam_width) && (bw < nodes.size()); bw++){
+            // Only push if heuristic value equal to minimum 
+            if(h(nodes[bw]) == h(nodes[0])){
+                filtered_nodes.push_back(nodes[bw]);
+            }
+        }
+        return filtered_nodes;
+    }
+
+
+    vector<int> beamSearch(int constraint=INT_MAX, int beam_width = 2){
+        
+        // Init
+        vector<int> source = start();
+
+        priority_queue<vector<int>, vector<vector<int>>, function<bool(vector<int>, vector<int>)>> Q( [this](vector<int> l, vector<int> r) -> bool {// Lambda Comparator Constructor for function<>
+                // Min Priority Queue based on score
+                return (h(l) > h(r));
+        });
+        
+
+        // Push Source,
+        Q.push(source);
+        while(!Q.empty()){
+
+            // Get top of queue
+            vector<int> node = Q.top();
+            Q.pop();
+
+            printf("\nPOP: ");
+            printPath(node);
+
+            // Test Goal
+            if(goalTest(node, constraint)){
+                cout << "Goal Found\n";
+                return node;
+            }
+
+            // Explore successor moves
+            for(vector<int> move: beam(movegen(node), beam_width)){
+                if(closed.find(toString(move)) == closed.end()){
+                    closed.insert(toString(move));
+                    Q.push(move);
+                }
+            }
+        }
+        return source;   
+    }
+
 
 
     vector<int> vnd(){
@@ -309,9 +355,10 @@ public:
     }
 
     void testPrint(){
-        // vector<int> sol = bestFirstSearch(15000); 
+        // vector<int> sol = bestFirstSearch(18000); 
         // vector<int> sol = hillClimbing(start(), 3); 
-        vector<int> sol = vnd(); 
+        vector<int> sol = beamSearch(18000, 2); 
+        // vector<int> sol = vnd(); 
         // pii sol = beamSearch(N, 13);
         printPath(sol);
         cout << "BFS Total cost = " << h(sol) << "\n";
