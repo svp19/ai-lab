@@ -215,7 +215,7 @@ class JobAllocation{
             Q.pop();
             cout << "Q: " << Q.size() << "\n";
 
-            printf("Popped: ");
+            printf("\nPOP: ");
             for(int i:node)
                 printf("%d, ", i);
             printf(" Score: %d\n", h(node));
@@ -232,12 +232,16 @@ class JobAllocation{
             }
 
             // Explore successor moves
-            for(vector<int> move: movegen(source)){
+            for(vector<int> move: movegen(node)){
                 if(closed.find(toString(move)) == closed.end()){
                     closed.insert(toString(move));
                     Q.push(move);
+                    cout<<"Push: \n";
+                    for(int i:move)
+                        printf("%d, ", i);
+                    printf(" Score: %d\n", h(node));
                 }else{
-                    cout<<"dint push this\n";
+                    cout<<"NO push: \n";
                     for(int i:move)
                         printf("%d, ", i);
                     printf(" Score: %d\n", h(node));
@@ -296,7 +300,7 @@ public:
 
 
     void testPrint(){
-        vector<int> sol = bestFirstSearch(18000); 
+        vector<int> sol = bestFirstSearch(13000); 
         // pii sol = beamSearch(N, 13);
         // printf("Total Cost: %d\n", getNode(sol).path_cost);
         // vector<int> sol = hillClimbing(); 
