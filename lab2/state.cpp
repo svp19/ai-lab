@@ -70,7 +70,6 @@ public:
         return neighbours;
     }
 
-
     void print(){
         for(int j : jobs)
             cout<<j<<" ";

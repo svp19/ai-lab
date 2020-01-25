@@ -5,21 +5,63 @@ pii nil = {-1, -1};
 class JobAllocation{
     vector<vector<int>> cost;
     ss open, closed; 
-    int N, constraint;
-
+    int N, space_size;
+    int constraint;
+    int num_states;
     int heuristic(State S);
     bool goalTest(State S);
-    State bestNeighbour(State S, int K);
+
+/*
+    Question 1:  Best First Search
+    *******************************************************
+    Use priority queue as the OPEN set
+*/
     State bestFirstSearch();
+
+/*
+    Question 2: Beam search
+    *******************************************************
+    consists of 2 functions
+    * makeBeam , for generating neighbours
+    * beamSearch, the actual function that does the traversal
+*/
+    vector<State> makeBeam(State S, int K, int beamSize);
+    State beamSearch(int beamSize);
+
+/*
+    Question 3: Hill Climbing
+    *******************************************************
+    consists of 2 functions
+    * bestNeighbour , for generating neighbours
+    * hillClimbing, calls bestNeighbour to go to the best node
+*/
+    State bestNeighbour(State S, int K);
     State hillClimbing();
+
+/*
+    Question 4: Variable NeighbourHood descent
+    *******************************************************
+    Only one function that does the job 
+*/
+    State variableNeighbourhoodDescent();
+/*
+    Question 5: Tabu Search
+    *******************************************************
+    Only one function that does the job 
+*/
+    State tabuSearch();
 
 public:
     void input(char *filename){
-        cout<<"opening "<<filename<<endl;
+        // cout<<"Opening "<<filename<<endl;
         int cell_cost;
         ifstream fin;
         fin.open(filename);
         fin >> N >> constraint;
+        space_size = 1;
+        num_states = 0;
+        for(int i=2; i<=N; i++)
+            space_size *= i;
         // Input N x N cost matrix
         for(int i=0; i<N; ++i){
             vector<int> rowC;
@@ -35,14 +77,18 @@ public:
 
 
     void testPrint(){
-        State sol = bestFirstSearch(); 
-        // pii sol = beamSearch(N, 13);
-        // printf("Total Cost: %d\n", getNode(sol).path_cost);
-        // vector<int> sol = hillClimbing(); 
+        State sol = bestFirstSearch();
+        // State sol = beamSearch(3);
+        // State sol = hillClimbing();
+        cout<<"Solution\t: ";
         sol.print();
-        cout << "BFS Total cost = " << heuristic(sol) << "\n";
+        printf("H. value\t: %d\n", heuristic(sol));
+        printf("Visited\t\t: %d\n", num_states);
+        printf("Space size\t: %d\n", space_size);
+        printf("Frac visited\t: %.2f%%\n", (100.0*num_states)/space_size);
     }
 };
+
 
 int JobAllocation:: heuristic(State S){
     /*
@@ -101,47 +147,102 @@ State JobAllocation::bestFirstSearch(){
     });
     
     State S(N);
-    S.print();
     // Push Source,
     Q.push(S);
     closed.insert(hash_value(S.jobs));
-    int num = 0;
     while(!Q.empty()){
         S = Q.top();
         Q.pop();
-        cout<<"At state "<<num<<": ";
-        S.print();
-        cout<<heuristic(S)<<endl;
-        num++;
+        num_states++;
+
         if(goalTest(S)){
-            cout << "Goal Found\n";
+            cout << "Goal Found!!!!!!\n";
             return S;
         }
-        // generate moves and update closed set too
-        vector<State> neighbours = S.moveGen(closed, 2);
-        printf("Size of closed is %ld\n", closed.size());
 
-        for(State T : neighbours)
+        // generate moves and update closed set too
+        for(State T : S.moveGen(closed, 2))
             Q.push(T);
+
     }
     cout<<"Could not find any goal with constraint "<<constraint<<endl;
     return S;
 }
 
 
-State JobAllocation::hillClimbing(){
-    State S(N);
-    int cost, newCost;
-    newCost = heuristic(S);
+vector<State> JobAllocation::makeBeam(State S, int K, int beamSize){
+    ss dummy;
+    vector<State> beam;
+    priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
+        // Min Priority Queue based on score
+        return (heuristic(l) > heuristic(r));
+    });
+    for(State T: S.moveGen(dummy, K)) Q.push(T);
 
-    while(true){
-        cost = newCost;
-        S = bestNeighbour(S);
-        newCost = heuristic(S);
-        if(newCost >= cost)
+    int cost = INT_MAX, newCost;
+    while(!Q.empty()){
+        State T = Q.top();
+        Q.pop();
+
+        //continue if state has been visited
+        string t_key = hash_value(T.jobs);
+        if(closed.find(t_key)!=closed.end()) continue;
+
+        //if not found in closed, add it to beam and closed
+        beam.push_back(T);
+        closed.insert(t_key);
+        
+        /*
+            We would generally stop at beam.size() == beamSize
+            But we keep on adding elements if elements past beamsize
+            have the same heuristic value as the last element in the beam
+        */
+        newCost = heuristic(T);
+        if(cost!=newCost &&  beam.size()>=beamSize) // hence this condition
             break;
     }
+    return beam;
+}
+
+State JobAllocation::beamSearch(int beamSize){
+    //declare empty priority queue
+    priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
+            // Min Priority Queue based on score
+            return (heuristic(l) > heuristic(r));
+    });
+    
+    State S(N);
+    // Push Source,
+    Q.push(S);
+    closed.insert(hash_value(S.jobs));
+    while(!Q.empty()){
+        S = Q.top();
+        Q.pop();
+        num_states++;
+        
+        if(goalTest(S)){
+            cout << "Goal Found!!!!!\n";
+            return S;
+        }
+
+        // generate moves and update closed set too
+        for(State T : makeBeam(S, 2, beamSize))
+            Q.push(T);
+    }
+    cout<<"Could not find any goal with constraint "<<constraint<<endl;
     return S;
+}
+
+State JobAllocation::hillClimbing(){
+    State node(N);
+    State newNode = bestNeighbour(node);
+
+    while(heuristic(node) >= heuristic(newNode)){
+        num_states++;
+        node = newNode;
+        newNode = bestNeighbour(node);
+    }
+    return node;
 }
 
 int main(int argc, char** argv){
