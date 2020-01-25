@@ -11,10 +11,14 @@ import os
 import requests
 i = 1
 files = os.listdir()
-while f"input{i}.txt" in files:
-    with open(f"input{i}.txt", "r") as file:
+while f"input{i}" in files:
+    with open(f"input{i}", "r") as file:
         text = []
+        firstLine = True
         for line in file:
+            if firstLine:
+                firstLine = False
+                continue            
             line = "-".join(line.split())
             text.append(line)
         text = "--".join(text)
