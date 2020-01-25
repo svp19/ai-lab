@@ -31,7 +31,7 @@ struct Node{
 class JobAllocation{
     vector<vector<int>> cost;
     vector<vector<Node>> G;
-    int N;
+    int N, constraint;
 
     set<string> open, closed; 
 
@@ -85,7 +85,7 @@ class JobAllocation{
     }
 
 
-    bool goalTest(vector<int> state, int constraint=INT_MAX){
+    bool goalTest(vector<int> state){
         /* 
          *  Checks if every job is assigned to a unique person
          *   
@@ -214,7 +214,7 @@ class JobAllocation{
             printPath(node);
 
             // Test Goal
-            if(goalTest(node, constraint)){
+            if(goalTest(node)){
                 cout << "Goal Found\n";
                 return node;
             }
@@ -291,7 +291,7 @@ class JobAllocation{
             printPath(node);
 
             // Test Goal
-            if(goalTest(node, constraint)){
+            if(goalTest(node)){
                 cout << "Goal Found\n";
                 return node;
             }
@@ -325,8 +325,8 @@ public:
     void input(){
         int cell_cost;
         
-        // Input dimension N
-        cin >> N;
+        // Input dimension N and constraint
+        cin >> N >> constraint;
         
         // Input N x N cost matrix
         for(int i=0; i<N; ++i){
@@ -357,8 +357,8 @@ public:
     void testPrint(){
         // vector<int> sol = bestFirstSearch(18000); 
         // vector<int> sol = hillClimbing(start(), 3); 
-        vector<int> sol = beamSearch(18000, 2); 
-        // vector<int> sol = vnd(); 
+        // vector<int> sol = beamSearch(18000, 2); 
+        vector<int> sol = vnd(); 
         // pii sol = beamSearch(N, 13);
         printPath(sol);
         cout << "BFS Total cost = " << h(sol) << "\n";
