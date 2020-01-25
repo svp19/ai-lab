@@ -5,12 +5,12 @@ pii nil = {-1, -1};
 class JobAllocation{
     vector<vector<int>> cost;
     ss open, closed; 
-    int N;
+    int N, constraint;
 
     int heuristic(State S);
-    bool goalTest(State S, int constraint);
+    bool goalTest(State S);
     State bestNeighbour(State S, int K);
-    State bestFirstSearch(int constraint);
+    State bestFirstSearch();
     State hillClimbing();
 
 public:
@@ -19,8 +19,7 @@ public:
         int cell_cost;
         ifstream fin;
         fin.open(filename);
-        
-        fin >> N;
+        fin >> N >> constraint;
         // Input N x N cost matrix
         for(int i=0; i<N; ++i){
             vector<int> rowC;
@@ -36,7 +35,7 @@ public:
 
 
     void testPrint(){
-        State sol = bestFirstSearch(10000); 
+        State sol = bestFirstSearch(); 
         // pii sol = beamSearch(N, 13);
         // printf("Total Cost: %d\n", getNode(sol).path_cost);
         // vector<int> sol = hillClimbing(); 
@@ -58,7 +57,7 @@ int JobAllocation:: heuristic(State S){
     return sum;
 }
 
-bool JobAllocation:: goalTest(State S, int constraint=INT_MAX){
+bool JobAllocation:: goalTest(State S){
     /* 
         *  Checks if the cost of the State is less than the constraint
         *   
@@ -93,7 +92,7 @@ State JobAllocation:: bestNeighbour(State S, int K=2){
     return bestNeb;
 }
 
-State JobAllocation::bestFirstSearch(int constraint=INT_MAX){
+State JobAllocation::bestFirstSearch(){
 
     //declare empty priority queue
     priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
@@ -112,8 +111,9 @@ State JobAllocation::bestFirstSearch(int constraint=INT_MAX){
         Q.pop();
         cout<<"At state "<<num<<": ";
         S.print();
+        cout<<heuristic(S)<<endl;
         num++;
-        if(goalTest(S, constraint)){
+        if(goalTest(S)){
             cout << "Goal Found\n";
             return S;
         }
@@ -124,7 +124,7 @@ State JobAllocation::bestFirstSearch(int constraint=INT_MAX){
         for(State T : neighbours)
             Q.push(T);
     }
-    cout<<"Could not find any goal\n";
+    cout<<"Could not find any goal with constraint "<<constraint<<endl;
     return S;
 }
 

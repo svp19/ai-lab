@@ -22,13 +22,13 @@ while f"input{i}" in files:
             line = "-".join(line.split())
             text.append(line)
         text = "--".join(text)
-        text = f"http://www.hungarianalgorithm.com/solve.php?c={text}&random=1"
-        text = text[:46]+text[47:]
-        text = requests.get(text).text
+        url = f"http://www.hungarianalgorithm.com/solve.php?c={text}&random=1"
+        # url = text[:46]+text[47:]
+        text = requests.get(url).text
         index = text.index("optimal value equals ")+21
         text = text[index:]
         index = text.index(".")
         text = text[:index]
-        print(text)
+        print(text, url)
     i += 1
         
