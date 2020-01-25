@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include "combo.h"
 using namespace std;
 #define pii pair<int, int>
 
@@ -39,6 +40,15 @@ class JobAllocation{
     // Person
     // |
     // ⌄
+
+    vector<int> start(){
+        // Start = {0, 1, 2, 3, ..., N-1}
+        vector<int> v;
+        for(int i=0; i<N; ++i)
+            v.push_back(i);
+        return v;
+    }
+
 
     Node& getNode(pii pos){
         return G[pos.first][pos.second];
@@ -93,37 +103,41 @@ class JobAllocation{
             uniqueJob.insert(job);
         }
 
-        // cout << (uniqueJob.size() == N);
-        // cout << (uniquePerson.size() == N);
         return (
             (uniqueJob.size() == N) && 
             (h(state) <= constraint)
         );
     }
+    
 
-
-    vector<vector<int>> movegen(vector<int> node){
+    vector<vector<int>> movegen(vector<int> node, int density=2){
         int cost = h(node);
         vector<vector<int>> neighbours;
 
-        // For all pairs
-        for(int i=0; i<N-1; ++i){
-            for(int j=i+1; j<N; ++j){
-                
-                vector<int> neighbour = node;
-                swap(neighbour[i], neighbour[j]);
-                neighbours.push_back(neighbour);
-                
-                // cout << "Pushed: ";
+        vector<vector<int>> combos = nCr(node.size(), density);
+        for(vector<int> combo: combos){
+            vector<int> neighbour = node;
+            int d = density-1;
+            while(d--){
+                for(int i=1; i<combo.size(); ++i){
+                    swap(combo[i], combo[i-1]);
+                    swap(neighbour[combo[i]], neighbour[combo[i-1]]);
+                }
+                // cout << "Neighbour: ";
                 // for(int i: neighbour)
-                //     printf("%d, ", i);
+                //     cout << i << " ";
                 // cout << "\n";
-                
+
+                neighbours.push_back(neighbour);
+
+                // cout << "Combo: ";
+                // for(int i: combo)
+                //     cout << i << " ";
+                // cout << "\n";
             }
         }            
         return neighbours;
     }
-    
 
 
     int lookAhead(vector<pii> nextMoves, pii pos){
@@ -157,25 +171,15 @@ class JobAllocation{
     }
     
 
-    vector<int> headSortMovegen(vector<int> node){
+    vector<int> headSortMovegen(vector<int> node, int density){
         int cost = h(node);
-        pii exchangePos = nil;
+        vector<vector<int>> neighbours = movegen(node, density);
+        sort(neighbours.begin(), neighbours.end(), [this](const vector<int>& l, const vector<int>& r){
+            return h(l) < h(r);
+        });
 
-        // For all pairs
-        for(int i=0; i<N-1; ++i){
-            for(int j=i+1; j<N; ++j){
-                int newCost = cost - getCost({i, node[i]}) - getCost({j, node[j]}) + getCost({i, node[j]}) + getCost({j, node[i]});
-                if(newCost < cost){
-                    cost = newCost;
-                    exchangePos = {i, j};
-                }
-            }
-        }
-
-        if(exchangePos != nil)
-            swap(node[exchangePos.first], node[exchangePos.second]);
-            
-        return node;
+        // Return head with minimum heuristic value
+        return neighbours[0];
     }
 
 
@@ -187,18 +191,10 @@ class JobAllocation{
     }
 
 
-    // printQ(priority_queue<vector<int>, vector<vector<int>>, function<bool(vector<int>, vector<int>)>> Q){
-
-    // }
-
-
     vector<int> bestFirstSearch(int constraint=INT_MAX){
         
         // Init
-        vector<int> source;
-        for(int i=0; i<N; ++i)
-            source.push_back(i);
-
+        vector<int> source = start();
 
         priority_queue<vector<int>, vector<vector<int>>, function<bool(vector<int>, vector<int>)>> Q( [this](vector<int> l, vector<int> r) -> bool {// Lambda Comparator Constructor for function<>
                 // Min Priority Queue based on score
@@ -213,18 +209,10 @@ class JobAllocation{
             // Get top of queue
             vector<int> node = Q.top();
             Q.pop();
-            cout << "Q: " << Q.size() << "\n";
 
             printf("\nPOP: ");
-            for(int i:node)
-                printf("%d, ", i);
-            printf(" Score: %d\n", h(node));
+            printPath(node);
 
-            // // Mark visited
-            // if(!node.empty()){
-            //     closed.insert(toString(node));
-            // }
-            
             // Test Goal
             if(goalTest(node, constraint)){
                 cout << "Goal Found\n";
@@ -236,45 +224,102 @@ class JobAllocation{
                 if(closed.find(toString(move)) == closed.end()){
                     closed.insert(toString(move));
                     Q.push(move);
-                    cout<<"Push: \n";
-                    for(int i:move)
-                        printf("%d, ", i);
-                    printf(" Score: %d\n", h(node));
-                }else{
-                    cout<<"NO push: \n";
-                    for(int i:move)
-                        printf("%d, ", i);
-                    printf(" Score: %d\n", h(node));
                 }
             }
         }
-        return source;
-        
+        return source;   
     }
 
 
-    vector<int> hillClimbing(){
+    vector<int> hillClimbing(vector<int> node, int density=2){
         
-        vector<int> node;
-        
-        // Init
-        for(int i=0; i<N; ++i)
-            node.push_back(i);
-        
-        vector<int> newNode = headSortMovegen(node);
+        vector<int> newNode = headSortMovegen(node, density);
 
         while(h(newNode) < h(node)){
             node = newNode;
-            
-            for(int i: node)
-                cout << i << " ";
-            cout << "\n";
-
-            newNode = headSortMovegen(node);
+            newNode = headSortMovegen(node, density);
+            printPath(node);
         }
-        return newNode;
+        return node;
     }
 
+
+    vector<vector<int>> beam(vector<vector<int>> nodes, int beam_width=2){
+        
+        if(nodes.empty())
+            return nodes;
+
+        // Sort based on heuristic -> h()    
+        sort(nodes.begin(), nodes.end(), [this](const vector<int>& l, const vector<int>& r){
+            return h(l) < h(r);
+        });
+
+        // Make beam, atmost beamWidth elements
+        vector<vector<int>> filtered_nodes;
+        filtered_nodes.push_back(nodes[0]);
+
+        for(int bw=1; (bw < beam_width) && (bw < nodes.size()); bw++){
+            // Only push if heuristic value equal to minimum 
+            if(h(nodes[bw]) == h(nodes[0])){
+                filtered_nodes.push_back(nodes[bw]);
+            }
+        }
+        return filtered_nodes;
+    }
+
+
+    vector<int> beamSearch(int constraint=INT_MAX, int beam_width = 2){
+        
+        // Init
+        vector<int> source = start();
+
+        priority_queue<vector<int>, vector<vector<int>>, function<bool(vector<int>, vector<int>)>> Q( [this](vector<int> l, vector<int> r) -> bool {// Lambda Comparator Constructor for function<>
+                // Min Priority Queue based on score
+                return (h(l) > h(r));
+        });
+        
+
+        // Push Source,
+        Q.push(source);
+        while(!Q.empty()){
+
+            // Get top of queue
+            vector<int> node = Q.top();
+            Q.pop();
+
+            printf("\nPOP: ");
+            printPath(node);
+
+            // Test Goal
+            if(goalTest(node, constraint)){
+                cout << "Goal Found\n";
+                return node;
+            }
+
+            // Explore successor moves
+            for(vector<int> move: beam(movegen(node), beam_width)){
+                if(closed.find(toString(move)) == closed.end()){
+                    closed.insert(toString(move));
+                    Q.push(move);
+                }
+            }
+        }
+        return source;   
+    }
+
+
+
+    vector<int> vnd(){
+        
+        vector<int> node = start();
+        int density = 2;
+        while(density < N){
+            cout << "Density: " << density << "\n";
+            node = hillClimbing(node, density);
+            density ++;
+        }
+        return node;
+    }
 
 public:
     void input(){
@@ -296,20 +341,31 @@ public:
             JobAllocation::cost.push_back(rowC);
             JobAllocation::G.push_back(rowG);
         }
-    }  
+    }
 
+
+    void printPath(vector<int> state, bool verbose=false){
+        for(int i=0; i<state.size(); ++i){
+            if(verbose)
+                printf("{%d, %d}: %d, ", i, state[i], getCost({i, state[i]}));
+            else
+                printf("%d, ", state[i]);
+        }
+        printf(" Score: %d\n", h(state));
+    }
 
     void testPrint(){
-        vector<int> sol = bestFirstSearch(13000); 
+        // vector<int> sol = bestFirstSearch(18000); 
+        // vector<int> sol = hillClimbing(start(), 3); 
+        vector<int> sol = beamSearch(18000, 2); 
+        // vector<int> sol = vnd(); 
         // pii sol = beamSearch(N, 13);
-        // printf("Total Cost: %d\n", getNode(sol).path_cost);
-        // vector<int> sol = hillClimbing(); 
-        for(int i=0; i<sol.size(); ++i){
-            ;
-            printf("{%d, %d}: %d, ", i, sol[i], getCost({i, sol[i]}));
-        }
-        cout << "\n";
+        printPath(sol);
         cout << "BFS Total cost = " << h(sol) << "\n";
+
+        vector<int> test ;
+        for(int i=0 ; i<6; ++i)
+            test.push_back(i);
     }
 };
 
