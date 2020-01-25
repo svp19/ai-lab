@@ -45,21 +45,21 @@ public:
         string bitmask(N-K, 0);
         bitmask.resize(N, 1);
 
-        // permute bitmask to obtain every combo
+        // permute bitmask to obtain every combo of indices
         do{
             vi shuffled;
             for (int i = 0; i < N; i++)
                 if (bitmask[i])
-                    shuffled.push_back(jobs[i]);
+                    shuffled.push_back(i);
             do{
-                vi move;
+                vi move_idx;
                 for(int i = 0, j=0; i< N; i++){
                     if(bitmask[i])
-                        move.push_back(shuffled[j++]);
+                        move_idx.push_back(shuffled[j++]);
                     else
-                        move.push_back(jobs[i]);
+                        move_idx.push_back(i);
                 }
-                    
+                vi move = filter(move_idx);    
                 string key = hash_value(move);
                 if(closed.find(key) == closed.end()){
                     neighbours.push_back(State(move));
@@ -74,5 +74,12 @@ public:
         for(int j : jobs)
             cout<<j<<" ";
         cout<<endl;
+    }
+
+    vi filter(vi &indices){
+        vi F;
+        for(int i : indices)
+            F.push_back(jobs[i]);
+        return F;
     }
 };

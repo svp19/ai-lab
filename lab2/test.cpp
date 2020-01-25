@@ -8,7 +8,7 @@ int main(){
     ss closed;
     closed.insert(key);
     init.print();
-    for( State S: init.moveGen(closed, 2) )
+    for( State S: init.moveGen(closed, 4) )
         S.print();
     cout<<closed.size()<<endl;
     return 0;

@@ -36,14 +36,14 @@ class JobAllocation{
     * hillClimbing, calls bestNeighbour to go to the best node
 */
     State bestNeighbour(State S, int K);
-    State hillClimbing();
+    State hillClimbing(State node, int K);
 
 /*
     Question 4: Variable NeighbourHood descent
     *******************************************************
     Only one function that does the job 
 */
-    State variableNeighbourhoodDescent();
+    State variableNeighbourhoodDescent(int max_density);
 /*
     Question 5: Tabu Search
     *******************************************************
@@ -77,9 +77,10 @@ public:
 
 
     void testPrint(){
-        State sol = bestFirstSearch();
+        State sol = variableNeighbourhoodDescent(5);
+        // State sol = bestFirstSearch();
         // State sol = beamSearch(3);
-        // State sol = hillClimbing();
+        // State sol = hillClimbing(State(N));
         cout<<"Solution\t: ";
         sol.print();
         printf("H. value\t: %d\n", heuristic(sol));
@@ -117,25 +118,6 @@ bool JobAllocation:: goalTest(State S){
         (S.jobs.size() == N) && 
         (heuristic(S) <= constraint)
     );
-}
-
-
-State JobAllocation:: bestNeighbour(State S, int K=2){
-    /* 
-        for a give node, this returns the best neighbour
-        The best neighbour is the one with minimum cost
-    */
-    vector<State> neighbours = S.moveGen(closed, K);
-    State bestNeb = neighbours[0];
-    int minCost = INT_MAX;
-    for(State T : neighbours){
-        int cost = heuristic(T);
-        if(cost < minCost){
-            bestNeb = T;
-            minCost = cost;
-        }
-    }
-    return bestNeb;
 }
 
 State JobAllocation::bestFirstSearch(){
@@ -233,10 +215,27 @@ State JobAllocation::beamSearch(int beamSize){
     return S;
 }
 
-State JobAllocation::hillClimbing(){
-    State node(N);
-    State newNode = bestNeighbour(node);
 
+State JobAllocation:: bestNeighbour(State S, int K=2){
+    /* 
+        for a give node, this returns the best neighbour
+        The best neighbour is the one with minimum cost
+    */
+    vector<State> neighbours = S.moveGen(closed, K);
+    State bestNeb = neighbours[0];
+    int minCost = INT_MAX;
+    for(State T : neighbours){
+        int cost = heuristic(T);
+        if(cost < minCost){
+            bestNeb = T;
+            minCost = cost;
+        }
+    }
+    return bestNeb;
+}
+
+State JobAllocation::hillClimbing(State node, int K=2){
+    State newNode = bestNeighbour(node, K);
     while(heuristic(node) >= heuristic(newNode)){
         num_states++;
         node = newNode;
@@ -245,6 +244,15 @@ State JobAllocation::hillClimbing(){
     return node;
 }
 
+State JobAllocation:: variableNeighbourhoodDescent(int max_density){
+    State node = State(N);
+    for(int k = 2; k<=max_density && k<=N; k++){
+        // printf("Density: %d\n", k);
+        node = hillClimbing(node, k);
+        // printf("Num visited: %d\n\n", num_states);
+    }
+    return node;
+}
 int main(int argc, char** argv){
     JobAllocation solver;
     solver.input(argv[1]);
