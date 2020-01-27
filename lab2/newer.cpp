@@ -31,7 +31,7 @@ struct Node{
 class JobAllocation{
     vector<vector<int>> cost;
     vector<vector<Node>> G;
-    int N, constraint;
+    int N;
 
     set<string> open, closed; 
 
@@ -85,7 +85,7 @@ class JobAllocation{
     }
 
 
-    bool goalTest(vector<int> state){
+    bool goalTest(vector<int> state, int constraint=INT_MAX){
         /* 
          *  Checks if every job is assigned to a unique person
          *   
@@ -214,7 +214,7 @@ class JobAllocation{
             printPath(node);
 
             // Test Goal
-            if(goalTest(node)){
+            if(goalTest(node, constraint)){
                 cout << "Goal Found\n";
                 return node;
             }
@@ -254,12 +254,12 @@ class JobAllocation{
             return h(l) < h(r);
         });
 
-        // Make beam, atmost beamWidth elements
+        // Make beam, atmost beam_width elements
         vector<vector<int>> filtered_nodes;
         filtered_nodes.push_back(nodes[0]);
 
         for(int bw=1; (bw < beam_width) && (bw < nodes.size()); bw++){
-            // Only push if heuristic value equal to minimum 
+            // Only push if heuristic value equal to minimum, ie, (nodes[0])
             if(h(nodes[bw]) == h(nodes[0])){
                 filtered_nodes.push_back(nodes[bw]);
             }
@@ -292,7 +292,7 @@ class JobAllocation{
             printPath(node);
 
             // Test Goal
-            if(goalTest(node)){
+            if(goalTest(node, constraint)){
                 cout << "Goal Found\n";
                 return node;
             }
@@ -309,7 +309,6 @@ class JobAllocation{
     }
 
 
-
     vector<int> vnd(){
         
         vector<int> node = start();
@@ -323,149 +322,18 @@ class JobAllocation{
     }
 
 
-    vector<int> updateMemory(vector<int> M, int tt, vector<int> node, vector<int> prev_node){
-        vector<int> change_pos;
-
-        // Find pair of positions swapped
-        for(int i = 0; i < N; ++i){
-            if(node[i] != prev_node[i]){
-                change_pos.push_back(i);
-            }
-        }
-
-          
-        cout << "pos: ";
-        for(int i: change_pos)
-            cout << i << " ";
-        cout << "\n";
-
-        //  Decrement by -1 if not 0, set change_pos indices to tt
-        for(int i = 0; i < N; ++i){
-            if(i == change_pos[0] || i == change_pos[1]){
-                M[i] = tt;
-            } else {
-                if(M[i] > 0)
-                    M[i] -= 1;
-            }
-        }
-
-        cout << "UpdateM: ";
-        for(int i: M)
-            cout << i << " ";
-        cout << "\n";
-
-        return M;
-        
-    }
-
-
-    bool notTabuMove(vector<int> M, vector<int> node, vector<int> prev_node){
-        vector<int> change_pos;
-
-        // Find pair of positions swapped
-        for(int i = 0; i < N; ++i){
-            if(node[i] != prev_node[i]){
-                change_pos.push_back(i);
-            }
-        }
-      
-        // Is not tabu move
-        if(M[change_pos[0]] == 0 && M[change_pos[1]] == 0){
-            cout << "NOT TABU: ";
-            printPath(prev_node);
-            return true;
-        }
-
-        return false;
-    }
-
-
-    int count_zeros(vector<int> M){
-        int c = 0;
-        for(int m: M)
-            if(m == 0)
-                ++c;
-        return c;
-    }
-
-
-    vector<int> tabuSearch(int tt=2){
-        /*
-         * Implementation of Tabu Search
-         *  @Params: tt(int): tabu tenure, default_value = 2
-         *  @Return: Solution state found by algorithm 
-         * 
-        */
+    vector<int> tabu(){
         vector<int> node = start();
-        vector<int> M(N); // Memory
-        vector<int> F(N); // Frequency
-        vector<int> candidate = node;
-        vector<int> prev_node = node;
-        closed.insert(toString(node));
-
-
-        while(!goalTest(node)){// Termination Criterion
-
-            printPath(node);
-
-            // Generate neighbourhood
-            vector<vector<int>> neighbours = movegen(node);
-            if(neighbours.empty())
-                break;
-
-            // Sort by heuristic and choose best value node
-            sort(neighbours.begin(), neighbours.end(), [this](const vector<int>& l, const vector<int>& r){
-                return h(l) < h(r);
-            });
-
-            // Find candidate neighbour
-            for(vector<int> neighbour: neighbours){
-                if(notTabuMove(M, node, neighbour) && neighbour != node){
-                    if(closed.find(toString(candidate)) == closed.end()){
-                        closed.insert(toString(candidate));
-                        candidate = neighbour;
-                        break;
-                    }
-                }
-            }
-            
-            // Aspiration Criteria
-            if(h(node) < h(candidate)){
-                // Choose tabu move instead
-                for(vector<int> neighbour: neighbours){
-                    if(!notTabuMove(M, node, neighbour) && neighbour != node){
-                        if(closed.find(toString(candidate)) == closed.end()){
-                            closed.insert(toString(candidate));
-                            candidate = neighbour;
-                            break;
-                        }
-                    }
-                }
-            }
-            node = candidate;
-            if(node == start() || count_zeros(M) < 2)
-                return node;
-
-
-            if(node == prev_node)
-                break;
-
-            // Update M
-            M = updateMemory(M, tt, node, prev_node);
-            
-            // Update prev_node
-            prev_node = node;
-        }
+        
         return node;
     }
-
 
 public:
     void input(){
         int cell_cost;
         
-        // Input dimension N and constraint
-        cin >> N >> constraint;
+        // Input dimension N
+        cin >> N;
         
         // Input N x N cost matrix
         for(int i=0; i<N; ++i){
@@ -495,10 +363,9 @@ public:
 
     void testPrint(){
         // vector<int> sol = bestFirstSearch(18000); 
-        // vector<int> sol = hillClimbing(start(), 3); 
-        // vector<int> sol = beamSearch(18000, 2); 
+        // vector<int> sol = hillClimbing(start(), 2); 
+        vector<int> sol = beamSearch(14000, 2); 
         // vector<int> sol = vnd(); 
-        vector<int> sol = tabuSearch(3); 
         // pii sol = beamSearch(N, 13);
         printPath(sol);
         cout << "BFS Total cost = " << h(sol) << "\n";
