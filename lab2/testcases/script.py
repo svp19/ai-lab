@@ -3,6 +3,8 @@ For generation random matrices, go to https://onlinemathtools.com/generate-rando
 
 Download them into the directory as input1.txt, input2.txt etc
 
+Add a line in the beginning of the file with size of matrix
+
 And to get the solutions, run
 $python3 script.py > output.txt
 

@@ -15,7 +15,7 @@ class State{
 public:
     vi jobs;
     int N;
-    State(int n){
+    State(int n=5){
         N = n;
         for(int i=0; i<N; i++)
             jobs.push_back(i);
@@ -26,6 +26,13 @@ public:
         N = jobs.size();
     }
 
+    vi Delta(State neb){
+        vi delta;
+        for(int i=0;i<N; i++)
+            if(jobs[i] != neb.jobs[i])
+                delta.push_back(i);
+        return delta;
+    }
     vector<State> moveGen(ss &closed, int K){
         /*
             This function returns a list of states
@@ -82,4 +89,11 @@ public:
             F.push_back(jobs[i]);
         return F;
     }
-};
+
+    bool isNil(){
+        for(int num : jobs)
+            if(num != 0)
+                return false;
+        return true;
+    }
+}null_state=State(vector<int> (2, 0));

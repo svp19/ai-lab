@@ -1,4 +1,4 @@
-#include "state.cpp"
+#include "TabuSet.cpp"
 
 pii nil = {-1, -1};
 
@@ -8,6 +8,7 @@ class JobAllocation{
     int N, space_size;
     int constraint;
     int num_states;
+    TabuSet T;
     int heuristic(State S);
     bool goalTest(State S);
 
@@ -49,7 +50,8 @@ class JobAllocation{
     *******************************************************
     Only one function that does the job 
 */
-    State tabuSearch();
+    State tabuNextMove(State S, int K);
+    State tabuSearch(int queue_size, int K, int iter_count);
 
 public:
     void input(char *filename){
@@ -77,7 +79,8 @@ public:
 
 
     void testPrint(){
-        State sol = variableNeighbourhoodDescent(5);
+        State sol = tabuSearch(10, 2, 20000);
+        // State sol = variableNeighbourhoodDescent(5);
         // State sol = bestFirstSearch();
         // State sol = beamSearch(3);
         // State sol = hillClimbing(State(N));
@@ -253,7 +256,79 @@ State JobAllocation:: variableNeighbourhoodDescent(int max_density){
     }
     return node;
 }
+
+State JobAllocation :: tabuNextMove(State S, int K){
+    /*
+        Returns next move after updating tabuset
+    */
+    ss dummy;//dummy empty set
+    vector<State> nonTabu;
+    vector<State> tabu;
+
+    //partition the neighbours into tabu and non tabu
+    T.partition(S, S.moveGen(dummy, K), nonTabu, tabu);
+    
+    //try to find the best node in nontabu 
+    int curr_cost = INT_MAX;
+    State bestNode = null_state;
+    for(State &neb: nonTabu){
+        int new_cost = heuristic(neb);
+        if(new_cost <= curr_cost){
+            curr_cost = new_cost;
+            bestNode = neb;
+        }
+    }
+
+    // once we get the best neighbour, update T.best
+    if(! bestNode.isNil() ){
+        if( T.best.isNil() || heuristic(bestNode) < heuristic(T.best)){
+            T.best = bestNode;
+            //surely, if bestNode is better than T.best, we must return this move
+            return bestNode;         
+        }
+    }
+
+    if(curr_cost <= heuristic(S))
+    //best neighbour is better than current node
+        return bestNode;
+
+    // check for aspiration
+    curr_cost = heuristic(T.best);
+    bestNode = null_state;
+    for(State &neb: tabu){
+        int new_cost = heuristic(neb);
+        if(new_cost < curr_cost){
+            curr_cost = new_cost;
+            bestNode = neb;
+        }
+    }
+    return bestNode;
+}
+
+State JobAllocation:: tabuSearch(int queue_size, int K=2, int iter_count=5000){
+    TabuSet T(queue_size);
+    State node(N);
+    State newNode = tabuNextMove(node, K);
+
+    for(int i=0; i<iter_count && !newNode.isNil(); i++ ){
+        num_states++;
+        node = newNode;
+        printf("Iteration %d: ", i);
+        node.print();
+        newNode = tabuNextMove(node, K);
+        vi change = newNode.Delta(node);
+        State D(change);
+        if(D.isNil())
+            break;
+    }
+    return T.best;
+}
+
 int main(int argc, char** argv){
+    if(argc!=2){
+        cout<<"Error: "<<argv[0]<<" <input_file_path>\n";
+        return 0;
+    }
     JobAllocation solver;
     solver.input(argv[1]);
     solver.testPrint();
