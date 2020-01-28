@@ -6,39 +6,40 @@ using namespace std::chrono;
 class TSP{
     edge_t edges;
     vp cities;
+    bool isEuclidean;
     ss open, closed; 
     int N;
-    int constraint;
-    bool isEuclidean;
     int num_states;
+    int density;
+    double iter_count;
     int heuristic(State S);
     bool goalTest(State S);
-
 /*
     Question 1:  Best First Search
     *******************************************************
     Use priority queue as the OPEN set
 */
-    State simulatedAnnealing();
+    bool validateMove(State &node, State &newNode, int k);
+    State randomNeighbour(State S);
+    State simulatedAnnealing(State Node);
 
 /*
-    Question 2: Beam search
+    Question 2: geneticAlgorithm
     *******************************************************
     consists of 2 functions
-    * fuck , you know for what
+    * makeMove, you know for what, Daddy does Mommy
     * geneticAlgorithm, the actual function that does the traversal
 */
-    vector<State> fuck(State S, int K, int beamSize);
+    vector<State> makeMove(State A, State B);
     State geneticAlgorithm(int beamSize);
 
 /*
     Question 3: Hill Climbing
     *******************************************************
     consists of 2 functions
-    * bestNeighbour , for generating neighbours
-    * hillClimbing, calls bestNeighbour to go to the best node
+    * randNeighbour , for generating neighbours
+    * hillClimbing, calls randNeighbour to go to the best node
 */
-    State bestNeighbour(State S, int K);
     State hillClimbing(State node, int K);
 
 /*
@@ -124,70 +125,42 @@ bool TSP:: goalTest(State S){
     return false;
 }
 
-State TSP::simulatedAnnealing(){
 
-    //declare empty priority queue
-    priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
-            // Min Priority Queue based on score
-            return (heuristic(l) > heuristic(r));
-    });
-    
-    State S(N);
-    // Push Source,
-    Q.push(S);
-    closed.insert(hash_value(S.places));
-    while(!Q.empty()){
-        S = Q.top();
-        Q.pop();
+State TSP:: randomNeighbour(State S){
+    /* 
+        for a give node, this returns the best neighbour
+        The random neighbour is the one with minimum cost
+    */
+    vector<State> neighbours = S.moveGen(closed, density);
+    int rand_index = rand() % neighbours.size();
+    return neighbours[rand_index];
+}
+
+bool TSP:: validateMove(State &node, State &newNode, int k){
+    double temperature = iter_count/(k+1);
+    double deltaH = heuristic(node) - heuristic(newNode);
+    if(deltaH > 0)
+        return true;
+    double prob = 1;
+    if(k != 0)
+        prob = 1 - exp( deltaH / k * temperature );
+    double p = double(rand())/double((RAND_MAX));
+    return (p < prob);
+}
+
+State TSP::simulatedAnnealing(State node){
+    for(int k=0; k < iter_count; k++){
+        State newNode = randomNeighbour(node);
         num_states++;
-
-        if(goalTest(S)){
-            cout << "Goal Found!!!!!!\n";
-            return S;
-        }
-
-        // generate moves and update closed set too
-        for(State T : S.moveGen(closed, 2))
-            Q.push(T);
-
+        if(validateMove(node, newNode, k))
+            node = newNode;
     }
-    cout<<"Could not find any goal with constraint "<<constraint<<endl;
-    return S;
+    return node;
 }
 
 
-vector<State> TSP::fuck(State S, int K, int beamSize){
-    ss dummy;
-    vector<State> beam;
-    priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
-        // Min Priority Queue based on score
-        return (heuristic(l) > heuristic(r));
-    });
-    for(State T: S.moveGen(dummy, K)) Q.push(T);
-
-    int cost = INT_MAX, newCost;
-    while(!Q.empty()){
-        State T = Q.top();
-        Q.pop();
-
-        //continue if state has been visited
-        string t_key = hash_value(T.places);
-        if(closed.find(t_key)!=closed.end()) continue;
-
-        //if not found in closed, add it to beam and closed
-        beam.push_back(T);
-        closed.insert(t_key);
-        
-        /*
-            We would generally stop at beam.size() == beamSize
-            But we keep on adding elements if elements past beamsize
-            have the same heuristic value as the last element in the beam
-        */
-        newCost = heuristic(T);
-        if(cost!=newCost &&  beam.size()>=beamSize) // hence this condition
-            break;
-    }
-    return beam;
+vector<State> TSP::makeMove(State A, State B){
+    
 }
 
 State TSP::geneticAlgorithm(int beamSize){
@@ -212,41 +185,12 @@ State TSP::geneticAlgorithm(int beamSize){
         }
 
         // generate moves and update closed set too
-        for(State T : fuck(S, 2, beamSize))
+        for(State T : makeMove(S, 2, beamSize))
             Q.push(T);
     }
-    cout<<"Could not find any goal with constraint "<<constraint<<endl;
     return S;
 }
 
-
-State TSP:: bestNeighbour(State S, int K=2){
-    /* 
-        for a give node, this returns the best neighbour
-        The best neighbour is the one with minimum cost
-    */
-    vector<State> neighbours = S.moveGen(closed, K);
-    State bestNeb = neighbours[0];
-    int minCost = INT_MAX;
-    for(State T : neighbours){
-        int cost = heuristic(T);
-        if(cost < minCost){
-            bestNeb = T;
-            minCost = cost;
-        }
-    }
-    return bestNeb;
-}
-
-State TSP::hillClimbing(State node, int K=2){
-    State newNode = bestNeighbour(node, K);
-    while(heuristic(node) >= heuristic(newNode)){
-        num_states++;
-        node = newNode;
-        newNode = bestNeighbour(node);
-    }
-    return node;
-}
 
 State TSP:: variableNeighbourhoodDescent(int max_density){
     State node = State(N);
