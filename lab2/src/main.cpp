@@ -330,9 +330,9 @@ State JobAllocation:: tabuSearch(int queue_size, int K=2, int iter_count=5000){
         vi change = newNode.Delta(node);
         State D(change);
         if(D.isNil())
-            break;
+            return node;
     }
-    return node;
+    return T.best;
 }
 
 int main(int argc, char** argv){
