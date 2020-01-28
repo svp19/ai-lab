@@ -327,6 +327,7 @@ State JobAllocation:: tabuSearch(int queue_size, int K=2, int iter_count=5000){
         printf("Iteration %d: ", i);
         node.print();
         newNode = tabuNextMove(node, K);
+        T.insert(node, newNode);
         vi change = newNode.Delta(node);
         State D(change);
         if(D.isNil())
