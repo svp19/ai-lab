@@ -1,4 +1,6 @@
 #include "TabuSet.cpp"
+#include <chrono>
+using namespace std::chrono; 
 
 pii nil = {-1, -1};
 
@@ -79,16 +81,25 @@ public:
 
 
     void testPrint(){
+        // Get starting timepoint 
+        auto start = high_resolution_clock::now(); 
+    
         State sol = tabuSearch(10, 2, 20000);
         // State sol = variableNeighbourhoodDescent(5);
         // State sol = bestFirstSearch();
-        // State sol = beamSearch(3);
+        // State sol = beamSearch(2);
         // State sol = hillClimbing(State(N));
+
+        // Get ending timepoint 
+        auto stop = high_resolution_clock::now(); 
+        auto duration = duration_cast<microseconds>(stop - start);
+
         cout<<"Solution\t: ";
         sol.print();
         printf("H. value\t: %d\n", heuristic(sol));
         printf("Visited\t\t: %d\n", num_states);
         printf("Space size\t: %d\n", space_size);
+        printf("Time taken (micro s): %ld\n", duration.count());
         printf("Frac visited\t: %.2f%%\n", (100.0*num_states)/space_size);
     }
 };
@@ -321,7 +332,7 @@ State JobAllocation:: tabuSearch(int queue_size, int K=2, int iter_count=5000){
         if(D.isNil())
             break;
     }
-    return T.best;
+    return node;
 }
 
 int main(int argc, char** argv){

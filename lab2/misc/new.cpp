@@ -1,6 +1,8 @@
 #include <bits/stdc++.h>
+#include <chrono>
 #include "combo.h"
 using namespace std;
+using namespace std::chrono; 
 #define pii pair<int, int>
 
 pii nil = {-1, -1};
@@ -31,7 +33,7 @@ struct Node{
 class JobAllocation{
     vector<vector<int>> cost;
     vector<vector<Node>> G;
-    int N;
+    int N, constraint, numStates;
 
     set<string> open, closed; 
 
@@ -85,7 +87,7 @@ class JobAllocation{
     }
 
 
-    bool goalTest(vector<int> state, int constraint=INT_MAX){
+    bool goalTest(vector<int> state){
         /* 
          *  Checks if every job is assigned to a unique person
          *   
@@ -191,10 +193,10 @@ class JobAllocation{
     }
 
 
-    vector<int> bestFirstSearch(int constraint=INT_MAX){
+    vector<int> bestFirstSearch(){
         
         // Init
-        vector<int> source = start();
+        vector<int> source = JobAllocation::start();
 
         priority_queue<vector<int>, vector<vector<int>>, function<bool(vector<int>, vector<int>)>> Q( [this](vector<int> l, vector<int> r) -> bool {// Lambda Comparator Constructor for function<>
                 // Min Priority Queue based on score
@@ -214,7 +216,7 @@ class JobAllocation{
             printPath(node);
 
             // Test Goal
-            if(goalTest(node, constraint)){
+            if(goalTest(node)){
                 cout << "Goal Found\n";
                 return node;
             }
@@ -234,11 +236,12 @@ class JobAllocation{
     vector<int> hillClimbing(vector<int> node, int density=2){
         
         vector<int> newNode = headSortMovegen(node, density);
-
+        // numStates = 1;
         while(h(newNode) < h(node)){
             node = newNode;
             newNode = headSortMovegen(node, density);
             printPath(node);
+            numStates ++;
         }
         return node;
     }
@@ -254,12 +257,12 @@ class JobAllocation{
             return h(l) < h(r);
         });
 
-        // Make beam, atmost beam_width elements
+        // Make beam, atmost beamWidth elements
         vector<vector<int>> filtered_nodes;
         filtered_nodes.push_back(nodes[0]);
 
         for(int bw=1; (bw < beam_width) && (bw < nodes.size()); bw++){
-            // Only push if heuristic value equal to minimum, ie, (nodes[0])
+            // Only push if heuristic value equal to minimum 
             if(h(nodes[bw]) == h(nodes[0])){
                 filtered_nodes.push_back(nodes[bw]);
             }
@@ -268,10 +271,10 @@ class JobAllocation{
     }
 
 
-    vector<int> beamSearch(int constraint=INT_MAX, int beam_width = 2){
+    vector<int> beamSearch(int beam_width = 2){
         
         // Init
-        vector<int> source = start();
+        vector<int> source = JobAllocation::start();
         vector<int> node;
 
         priority_queue<vector<int>, vector<vector<int>>, function<bool(vector<int>, vector<int>)>> Q( [this](vector<int> l, vector<int> r) -> bool {// Lambda Comparator Constructor for function<>
@@ -292,7 +295,7 @@ class JobAllocation{
             printPath(node);
 
             // Test Goal
-            if(goalTest(node, constraint)){
+            if(goalTest(node)){
                 cout << "Goal Found\n";
                 return node;
             }
@@ -309,12 +312,14 @@ class JobAllocation{
     }
 
 
+
     vector<int> vnd(){
-        
-        vector<int> node = start();
+
+        numStates =1;        
+        vector<int> node = JobAllocation::start();
         int density = 2;
         while(density < N){
-            cout << "Density: " << density << "\n";
+            // cout << "Density: " << density << "\n";
             node = hillClimbing(node, density);
             density ++;
         }
@@ -322,18 +327,149 @@ class JobAllocation{
     }
 
 
-    vector<int> tabu(){
-        vector<int> node = start();
+    vector<int> updateMemory(vector<int> M, int tt, vector<int> node, vector<int> prev_node){
+        vector<int> change_pos;
+
+        // Find pair of positions swapped
+        for(int i = 0; i < N; ++i){
+            if(node[i] != prev_node[i]){
+                change_pos.push_back(i);
+            }
+        }
+
+          
+        cout << "pos: ";
+        for(int i: change_pos)
+            cout << i << " ";
+        cout << "\n";
+
+        //  Decrement by -1 if not 0, set change_pos indices to tt
+        for(int i = 0; i < N; ++i){
+            if(i == change_pos[0] || i == change_pos[1]){
+                M[i] = tt;
+            } else {
+                if(M[i] > 0)
+                    M[i] -= 1;
+            }
+        }
+
+        cout << "UpdateM: ";
+        for(int i: M)
+            cout << i << " ";
+        cout << "\n";
+
+        return M;
         
+    }
+
+
+    bool notTabuMove(vector<int> M, vector<int> node, vector<int> prev_node){
+        vector<int> change_pos;
+
+        // Find pair of positions swapped
+        for(int i = 0; i < N; ++i){
+            if(node[i] != prev_node[i]){
+                change_pos.push_back(i);
+            }
+        }
+      
+        // Is not tabu move
+        if(M[change_pos[0]] == 0 && M[change_pos[1]] == 0){
+            cout << "NOT TABU: ";
+            printPath(prev_node);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    int count_zeros(vector<int> M){
+        int c = 0;
+        for(int m: M)
+            if(m == 0)
+                ++c;
+        return c;
+    }
+
+
+    vector<int> tabuSearch(int tt=2){
+        /*
+         * Implementation of Tabu Search
+         *  @Params: tt(int): tabu tenure, default_value = 2
+         *  @Return: Solution state found by algorithm 
+         * 
+        */
+        vector<int> node = JobAllocation::start();
+        vector<int> M(N); // Memory
+        vector<int> F(N); // Frequency
+        vector<int> candidate = node;
+        vector<int> prev_node = node;
+        closed.insert(toString(node));
+
+
+        while(!goalTest(node)){// Termination Criterion
+
+            printPath(node);
+
+            // Generate neighbourhood
+            vector<vector<int>> neighbours = movegen(node);
+            if(neighbours.empty())
+                break;
+
+            // Sort by heuristic and choose best value node
+            sort(neighbours.begin(), neighbours.end(), [this](const vector<int>& l, const vector<int>& r){
+                return h(l) < h(r);
+            });
+
+            // Find candidate neighbour
+            for(vector<int> neighbour: neighbours){
+                if(notTabuMove(M, node, neighbour) && neighbour != node){
+                    if(closed.find(toString(candidate)) == closed.end()){
+                        closed.insert(toString(candidate));
+                        candidate = neighbour;
+                        break;
+                    }
+                }
+            }
+            
+            // Aspiration Criteria
+            if(h(node) < h(candidate)){
+                // Choose tabu move instead
+                for(vector<int> neighbour: neighbours){
+                    if(!notTabuMove(M, node, neighbour) && neighbour != node){
+                        if(closed.find(toString(candidate)) == closed.end()){
+                            closed.insert(toString(candidate));
+                            candidate = neighbour;
+                            break;
+                        }
+                    }
+                }
+            }
+            node = candidate;
+            if(node == JobAllocation::start() || count_zeros(M) < 2)
+                return node;
+
+
+            if(node == prev_node)
+                break;
+
+            // Update M
+            M = updateMemory(M, tt, node, prev_node);
+            
+            // Update prev_node
+            prev_node = node;
+        }
         return node;
     }
+
 
 public:
     void input(){
         int cell_cost;
         
-        // Input dimension N
-        cin >> N;
+        // Input dimension N and constraint
+        cin >> N >> constraint;
         
         // Input N x N cost matrix
         for(int i=0; i<N; ++i){
@@ -362,17 +498,28 @@ public:
     }
 
     void testPrint(){
-        // vector<int> sol = bestFirstSearch(18000); 
-        // vector<int> sol = hillClimbing(start(), 2); 
-        vector<int> sol = beamSearch(14000, 2); 
-        // vector<int> sol = vnd(); 
-        // pii sol = beamSearch(N, 13);
+        // Get starting timepoint 
+        auto start = high_resolution_clock::now(); 
+    
+        // vector<int> sol = bestFirstSearch(); numStates = closed.size();
+        // vector<int> sol = hillClimbing(JobAllocation::start(), 2); 
+        // vector<int> sol = beamSearch(4); numStates = closed.size();
+        vector<int> sol = vnd(); numStates --;
+        // vector<int> sol = tabuSearch(3); 
+        
+        // Get ending timepoint 
+        auto stop = high_resolution_clock::now(); 
+    
+        // Get duration. Substart timepoints to  
+        // get durarion. To cast it to proper unit 
+        // use duration cast method 
+        auto duration = duration_cast<microseconds>(stop - start); 
+        cout << "Num states: " << numStates << " states" << endl; 
+        cout << "Time taken: " << duration.count() << " microseconds" << endl; 
+        
+        
         printPath(sol);
         cout << "BFS Total cost = " << h(sol) << "\n";
-
-        vector<int> test ;
-        for(int i=0 ; i<6; ++i)
-            test.push_back(i);
     }
 };
 

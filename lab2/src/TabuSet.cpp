@@ -21,8 +21,10 @@ public:
         string key = hash_value(delta);
         /* insert into set only if key not present*/
         if(S.find(key)==S.end()){
-            if(S.size() == MAXSIZE)
+            if(S.size() == MAXSIZE){
+                S.erase(S.find(key));
                 Q.pop();
+            }
             Q.push(delta);
             S.insert(key);
             return true;
