@@ -1,16 +1,16 @@
-#include "TabuSet.cpp"
+#include "state.cpp"
 #include <chrono>
 using namespace std::chrono; 
 
-pii nil = {-1, -1};
 
-class JobAllocation{
-    vector<vector<int>> cost;
+class TSP{
+    edge_t edges;
+    vp cities;
     ss open, closed; 
-    int N, space_size;
+    int N;
     int constraint;
+    bool isEuclidean;
     int num_states;
-    TabuSet T;
     int heuristic(State S);
     bool goalTest(State S);
 
@@ -19,17 +19,17 @@ class JobAllocation{
     *******************************************************
     Use priority queue as the OPEN set
 */
-    State bestFirstSearch();
+    State simulatedAnnealing();
 
 /*
     Question 2: Beam search
     *******************************************************
     consists of 2 functions
-    * makeBeam , for generating neighbours
-    * beamSearch, the actual function that does the traversal
+    * fuck , you know for what
+    * geneticAlgorithm, the actual function that does the traversal
 */
-    vector<State> makeBeam(State S, int K, int beamSize);
-    State beamSearch(int beamSize);
+    vector<State> fuck(State S, int K, int beamSize);
+    State geneticAlgorithm(int beamSize);
 
 /*
     Question 3: Hill Climbing
@@ -47,13 +47,6 @@ class JobAllocation{
     Only one function that does the job 
 */
     State variableNeighbourhoodDescent(int max_density);
-/*
-    Question 5: Tabu Search
-    *******************************************************
-    Only one function that does the job 
-*/
-    State tabuNextMove(State S, int K);
-    State tabuSearch(int queue_size, int K, int iter_count);
 
 public:
     void input(char *filename){
@@ -61,20 +54,21 @@ public:
         int cell_cost;
         ifstream fin;
         fin.open(filename);
-        fin >> N >> constraint;
-        space_size = 1;
-        num_states = 0;
-        for(int i=2; i<=N; i++)
-            space_size *= i;
+        fin >> isEuclidean >> N;
+        cities = vp (N);
+
+        for(point &city : cities)
+            cin>>city.x>>city.y;
+
         // Input N x N cost matrix
         for(int i=0; i<N; ++i){
-            vector<int> rowC;
+            vector<double> rowC;
             
             for(int j=0; j<N; ++j){
                 fin >> cell_cost;
                 rowC.push_back(cell_cost);
             }
-            cost.push_back(rowC);
+            edges.push_back(rowC);
         }
         fin.close();
     }  
@@ -83,11 +77,9 @@ public:
     void testPrint(){
         // Get starting timepoint 
         auto start = high_resolution_clock::now(); 
-    
-        // State sol = tabuSearch(10, 2, 20000);
         State sol = variableNeighbourhoodDescent(5);
-        // State sol = bestFirstSearch();
-        // State sol = beamSearch(2);
+        // State sol = simulatedAnnealing();
+        // State sol = geneticAlgorithm(2);
         // State sol = hillClimbing(State(N));
 
         // Get ending timepoint 
@@ -98,43 +90,41 @@ public:
         sol.print();
         printf("H. value\t: %d\n", heuristic(sol));
         printf("Visited\t\t: %d\n", num_states);
-        printf("Space size\t: %d\n", space_size);
         printf("Time taken (micro s): %ld\n", duration.count());
-        printf("Frac visited\t: %.2f%%\n", (100.0*num_states)/space_size);
     }
 };
 
 
-int JobAllocation:: heuristic(State S){
+int TSP:: heuristic(State S){
     /*
         @params
-            * State S, having the jobs allocated to people
+            * State S, having the order to visit places
         @return
-            * integer representing the cost of this allocation
+            * integer representing the cost of this path
     */
-    int sum = 0;
-    for(int i=0; i<S.jobs.size(); i++)
-        sum += cost[i][S.jobs[i]];
-    return sum;
+    int path_cost = 0;
+    for(int i=1; i<S.places.size(); i++){
+        int u = S.places[i-1];
+        int v = S.places[i];
+        path_cost += edges[u][v];
+    }
+    return path_cost;
 }
 
-bool JobAllocation:: goalTest(State S){
+bool TSP:: goalTest(State S){
     /* 
         *  Checks if the cost of the State is less than the constraint
         *   
         * @params:
-        *          State S: having array of jobs assigned to ith person
+        *          State S: having array of places assigned to ith person
         *          constraint(int): maximum bound constraint for path cost
         * @return:
         *          Boolean of whether state is equal to goal or not.
         */
-    return (
-        (S.jobs.size() == N) && 
-        (heuristic(S) <= constraint)
-    );
+    return false;
 }
 
-State JobAllocation::bestFirstSearch(){
+State TSP::simulatedAnnealing(){
 
     //declare empty priority queue
     priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
@@ -145,7 +135,7 @@ State JobAllocation::bestFirstSearch(){
     State S(N);
     // Push Source,
     Q.push(S);
-    closed.insert(hash_value(S.jobs));
+    closed.insert(hash_value(S.places));
     while(!Q.empty()){
         S = Q.top();
         Q.pop();
@@ -166,7 +156,7 @@ State JobAllocation::bestFirstSearch(){
 }
 
 
-vector<State> JobAllocation::makeBeam(State S, int K, int beamSize){
+vector<State> TSP::fuck(State S, int K, int beamSize){
     ss dummy;
     vector<State> beam;
     priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
@@ -181,7 +171,7 @@ vector<State> JobAllocation::makeBeam(State S, int K, int beamSize){
         Q.pop();
 
         //continue if state has been visited
-        string t_key = hash_value(T.jobs);
+        string t_key = hash_value(T.places);
         if(closed.find(t_key)!=closed.end()) continue;
 
         //if not found in closed, add it to beam and closed
@@ -200,7 +190,7 @@ vector<State> JobAllocation::makeBeam(State S, int K, int beamSize){
     return beam;
 }
 
-State JobAllocation::beamSearch(int beamSize){
+State TSP::geneticAlgorithm(int beamSize){
     //declare empty priority queue
     priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
             // Min Priority Queue based on score
@@ -210,7 +200,7 @@ State JobAllocation::beamSearch(int beamSize){
     State S(N);
     // Push Source,
     Q.push(S);
-    closed.insert(hash_value(S.jobs));
+    closed.insert(hash_value(S.places));
     while(!Q.empty()){
         S = Q.top();
         Q.pop();
@@ -222,7 +212,7 @@ State JobAllocation::beamSearch(int beamSize){
         }
 
         // generate moves and update closed set too
-        for(State T : makeBeam(S, 2, beamSize))
+        for(State T : fuck(S, 2, beamSize))
             Q.push(T);
     }
     cout<<"Could not find any goal with constraint "<<constraint<<endl;
@@ -230,7 +220,7 @@ State JobAllocation::beamSearch(int beamSize){
 }
 
 
-State JobAllocation:: bestNeighbour(State S, int K=2){
+State TSP:: bestNeighbour(State S, int K=2){
     /* 
         for a give node, this returns the best neighbour
         The best neighbour is the one with minimum cost
@@ -248,7 +238,7 @@ State JobAllocation:: bestNeighbour(State S, int K=2){
     return bestNeb;
 }
 
-State JobAllocation::hillClimbing(State node, int K=2){
+State TSP::hillClimbing(State node, int K=2){
     State newNode = bestNeighbour(node, K);
     while(heuristic(node) >= heuristic(newNode)){
         num_states++;
@@ -258,7 +248,7 @@ State JobAllocation::hillClimbing(State node, int K=2){
     return node;
 }
 
-State JobAllocation:: variableNeighbourhoodDescent(int max_density){
+State TSP:: variableNeighbourhoodDescent(int max_density){
     State node = State(N);
     for(int k = 2; k<=max_density && k<=N; k++){
         // printf("Density: %d\n", k);
@@ -268,80 +258,12 @@ State JobAllocation:: variableNeighbourhoodDescent(int max_density){
     return node;
 }
 
-State JobAllocation :: tabuNextMove(State S, int K){
-    /*
-        Returns next move after updating tabuset
-    */
-    ss dummy;//dummy empty set
-    vector<State> nonTabu;
-    vector<State> tabu;
-
-    //partition the neighbours into tabu and non tabu
-    T.partition(S, S.moveGen(dummy, K), nonTabu, tabu);
-    
-    //try to find the best node in nontabu 
-    int curr_cost = INT_MAX;
-    State bestNode = null_state;
-    for(State &neb: nonTabu){
-        int new_cost = heuristic(neb);
-        if(new_cost <= curr_cost){
-            curr_cost = new_cost;
-            bestNode = neb;
-        }
-    }
-
-    // once we get the best neighbour, update T.best
-    if(! bestNode.isNil() ){
-        if( T.best.isNil() || heuristic(bestNode) < heuristic(T.best)){
-            T.best = bestNode;
-            //surely, if bestNode is better than T.best, we must return this move
-            return bestNode;         
-        }
-    }
-
-    if(curr_cost <= heuristic(S))
-    //best neighbour is better than current node
-        return bestNode;
-
-    // check for aspiration
-    curr_cost = heuristic(T.best);
-    bestNode = null_state;
-    for(State &neb: tabu){
-        int new_cost = heuristic(neb);
-        if(new_cost < curr_cost){
-            curr_cost = new_cost;
-            bestNode = neb;
-        }
-    }
-    return bestNode;
-}
-
-State JobAllocation:: tabuSearch(int queue_size, int K=2, int iter_count=5000){
-    TabuSet T(queue_size);
-    State node(N);
-    State newNode = tabuNextMove(node, K);
-
-    for(int i=0; i<iter_count && !newNode.isNil(); i++ ){
-        num_states++;
-        node = newNode;
-        printf("Iteration %d: ", i);
-        node.print();
-        newNode = tabuNextMove(node, K);
-        T.insert(node, newNode);
-        vi change = newNode.Delta(node);
-        State D(change);
-        if(D.isNil())
-            return node;
-    }
-    return T.best;
-}
-
 int main(int argc, char** argv){
     if(argc!=2){
         cout<<"Error: "<<argv[0]<<" <input_file_path>\n";
         return 0;
     }
-    JobAllocation solver;
+    TSP solver;
     solver.input(argv[1]);
     solver.testPrint();
     return 0;
