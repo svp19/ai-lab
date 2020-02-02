@@ -88,7 +88,7 @@ public:
         State sol = variableNeighbourhoodDescent(5);
         // State sol = bestFirstSearch();
         // State sol = beamSearch(2);
-        // State sol = hillClimbing(State(N));
+        // State sol = hillClimbing(State(N), 2);
 
         // Get ending timepoint 
         auto stop = high_resolution_clock::now(); 

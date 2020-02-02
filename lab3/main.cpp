@@ -27,7 +27,7 @@ class TSP{
     Question 2: geneticAlgorithm
     *******************************************************
     consists of 2 functions
-    * makeMove, you know for what, Daddy does Mommy
+    * makeMove
     * geneticAlgorithm, the actual function that does the traversal
 */
     vector<State> makeMove(State A, State B);
