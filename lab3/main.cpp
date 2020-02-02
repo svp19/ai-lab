@@ -21,17 +21,18 @@ class TSP{
 */
     bool validateMove(State &node, State &newNode, int k);
     State randomNeighbour(State S);
-    State simulatedAnnealing(State Node);
+    State simulatedAnnealing();
 
 /*
     Question 2: geneticAlgorithm
     *******************************************************
     consists of 2 functions
-    * makeMove
+    * makeChild
     * geneticAlgorithm, the actual function that does the traversal
 */
-    vector<State> makeMove(State A, State B);
-    State geneticAlgorithm(int beamSize);
+    State makeChild(State A, State B);
+    vs selectParents(vs &population);
+    State geneticAlgorithm();
 
 /*
     Question 3: Hill Climbing
@@ -83,7 +84,9 @@ public:
         State sol = null_state;
         density = 2;
         if(function_name=="simann")
-            sol = simulatedAnnealing(State(N));
+            sol = simulatedAnnealing();
+        else if(function_name=="genAlg")
+            sol = geneticAlgorithm();
         else
             cout<<"Wrong function!!\n";
         
@@ -144,7 +147,7 @@ State TSP:: randomNeighbour(State S){
      * 
      */
     closed.clear();
-    vector<State> neighbours = S.moveGen(closed, density);
+    vs neighbours = S.moveGen(closed, density);
     int rand_index = rand() % neighbours.size();
     return neighbours[rand_index];
 }
@@ -183,7 +186,8 @@ bool TSP:: validateMove(State &node, State &newNode, int k){
 }
 
 
-State TSP::simulatedAnnealing(State node){
+State TSP::simulatedAnnealing(){
+    State node(N);
     State bestNode = node;
     for(int k=0; k < k_max; k++){
         State newNode = randomNeighbour(node);
@@ -199,10 +203,51 @@ State TSP::simulatedAnnealing(State node){
 }
 
 
-vector<State> TSP::makeMove(State A, State B){
+// State TSP::makeChild(State &A, State &B){
     
-}
+// }
+vs TSP:: selectParents(vs &population){
+    vi H;
+    for( State &parent: population)
+        H.push_back(heuristic(parent));
+    int normalizer = accumulate(H.begin(), H.end(), 0);
+    
+    //normalize the probabilities
+    loop(i, H.size())
+        H[i] = H[i]/normalizer;
+    
+    //find the cummulative probabilities for random selection
+    loop(i, H.size()-1)
+        H[i+1] = H[i] + H[i+1];
 
+    vs selected;
+    loop(i, H.size()){
+        //roll random number
+        double p = double(rand())/double((RAND_MAX));
+        //find the greatest lower bound of p in H
+        int index = greatedLowerBound(H, p);
+        //append that to the selected population
+        selected.push_back(population[index]);
+    }
+    sort(selected.begin(), selected.end(), [this](const State &a, const State &b){
+        return heuristic(a) < heuristic(b);
+    });
+    return selected;
+}
+State TSP:: geneticAlgorithm(){
+    State node(N);
+    vs population = node.moveGen(closed, 2);
+    sort(population.begin(), population.end(), [this](const State &a, const State &b){
+        return heuristic(a) < heuristic(b);
+    });
+    loop(i, k_max){
+        vs selected = selectParents(population);
+        //page 132 in book;
+
+    }
+    //return best among population
+    return *population.begin();
+}
 int main(int argc, char** argv){
     if(argc!=2){
         cout<<"Error: "<<argv[0]<<" <input_file_path>\n";
@@ -210,7 +255,7 @@ int main(int argc, char** argv){
     }
     TSP solver;
     solver.input(argv[1]);
-    solver.testPrint("simann");
+    solver.testPrint("genAlg");
     return 0;
 }
 

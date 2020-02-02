@@ -9,6 +9,7 @@ using namespace std;
 #define vp vector<point>
 #define ss set<string>
 #define edge_t vector<vector<double>>
+#define vs vector<State>
 #define loop(i, n) for(int i=0; i<n; i++)
 
 string hash_value(vi &arr){
@@ -16,6 +17,25 @@ string hash_value(vi &arr){
     for(int num: arr)
         s = s + "," + to_string(num);
     return s;
+}
+
+int greatedLowerBound(vector<int> &V, double p){
+    int index = 0;
+    int beg = 0, end =V.size()-1;
+    while(beg<=end){
+        int mid = (beg+end)/2;
+        if(V[mid]==p){
+            return mid;
+        }
+        else if(V[mid] < p){
+            index = mid;
+            beg = mid + 1;
+        }
+        else{
+            end = mid - 1;
+        }
+    }
+    return index;
 }
 
 class State{
@@ -40,7 +60,7 @@ public:
                 delta.push_back(i);
         return delta;
     }
-    vector<State> moveGen(ss &closed, int K){
+    vs moveGen(ss &closed, int K){
         /*
             This function returns a list of states
             that has less or equal to K places perturbed.
@@ -53,7 +73,7 @@ public:
                 * vector<vector<int>> neighbours
         */
         
-        vector<State> neighbours;
+        vs neighbours;
 
         // Generate bitmask with K 1's and N-K 0's
         string bitmask(N-K, 0);
