@@ -11,11 +11,11 @@ class TSP{
     int N;
     int num_states;
     int density;
-    double iter_count;
+    double k_max; // max iteration count
     int heuristic(State S);
     bool goalTest(State S);
 /*
-    Question 1:  Best First Search
+    Question 1:  Simulated Annealing
     *******************************************************
     Use priority queue as the OPEN set
 */
@@ -59,14 +59,13 @@ public:
         fin >> N;
         cities = vp (N);
 
-        iter_count = 100;
+        k_max = 200;
         for(point &city : cities)
             fin>>city.x>>city.y;
 
         // Input N x N cost matrix
         loop(i, N){
             vector<double> rowC;
-            
             loop(j, N){
                 fin >> cell_cost;
                 rowC.push_back(cell_cost);
@@ -118,6 +117,7 @@ int TSP:: heuristic(State S){
     return path_cost;
 }
 
+
 bool TSP:: goalTest(State S){
     /* 
         *  Checks if the cost of the State is less than the constraint
@@ -134,35 +134,64 @@ bool TSP:: goalTest(State S){
 
 State TSP:: randomNeighbour(State S){
     /* 
-        for a give node, this returns the best neighbour
-        The random neighbour is the one with minimum cost
-    */
+     *  For a given node, this returns a random neighbour
+     * 
+     *  @Params:
+     *      S(State ): current state
+     *           
+     *  @Returns:
+     *      State: a random neighbour of S
+     * 
+     */
     closed.clear();
     vector<State> neighbours = S.moveGen(closed, density);
     int rand_index = rand() % neighbours.size();
     return neighbours[rand_index];
 }
 
+
 bool TSP:: validateMove(State &node, State &newNode, int k){
-    double temperature = iter_count/(k+1);
+    /*
+     *  Calculates whether next possible state (newNode) is taken using probability 
+     *      temperature = k_max/(k+1)
+     *      P = 1 - exp([h(node) - h(newNode)]/ k * temperature)
+     * 
+     *  @Params: 
+     *      node(State): current state
+     *      newNode(State): next possible state
+     *      k(int): iteration number
+     
+     * @Returns:
+     *      Boolean: whether to consider newNode for next move
+     * 
+     */
+    double temperature = k_max/(k+1);
+    cout << "Temp: " << temperature << "\n";
     double deltaH = heuristic(node) - heuristic(newNode);
-    if(deltaH > 0)
+
+    if(deltaH > 0) // If newNode better, choose it
         return true;
+    
     double prob = 1;
-    if(k != 0)
-        prob = 1 - exp( deltaH / k * temperature );
     double p = double(rand())/double((RAND_MAX));
+
+    if(k != 0)
+        prob = 1/(1 + exp( -deltaH / k * temperature ));
+    cout << prob << "\n";
 
     return (p < prob);
 }
 
+
 State TSP::simulatedAnnealing(State node){
     State bestNode = node;
-    for(int k=0; k < iter_count; k++){
+    for(int k=0; k < k_max; k++){
         State newNode = randomNeighbour(node);
         num_states++;
+        
         if(validateMove(node, newNode, k))
             node = newNode;
+        
         if(heuristic(node) < heuristic(bestNode))
             bestNode = node;
     }
