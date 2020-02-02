@@ -9,7 +9,7 @@ using namespace std;
 #define vp vector<point>
 #define ss set<string>
 #define edge_t vector<vector<double>>
-
+#define loop(i, n) for(int i=0; i<n; i++)
 
 string hash_value(vi &arr){
     string s = "";

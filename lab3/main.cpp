@@ -6,7 +6,7 @@ using namespace std::chrono;
 class TSP{
     edge_t edges;
     vp cities;
-    bool isEuclidean;
+    string isEuclidean;
     ss open, closed; 
     int N;
     int num_states;
@@ -52,20 +52,22 @@ class TSP{
 public:
     void input(char *filename){
         // cout<<"Opening "<<filename<<endl;
-        int cell_cost;
+        double cell_cost;
         ifstream fin;
         fin.open(filename);
-        fin >> isEuclidean >> N;
+        fin >> isEuclidean;
+        fin >> N;
         cities = vp (N);
 
+        iter_count = 100;
         for(point &city : cities)
-            cin>>city.x>>city.y;
+            fin>>city.x>>city.y;
 
         // Input N x N cost matrix
-        for(int i=0; i<N; ++i){
+        loop(i, N){
             vector<double> rowC;
             
-            for(int j=0; j<N; ++j){
+            loop(j, N){
                 fin >> cell_cost;
                 rowC.push_back(cell_cost);
             }
@@ -75,13 +77,17 @@ public:
     }  
 
 
-    void testPrint(){
+    void testPrint(string function_name){
         // Get starting timepoint 
+        //init some vars
         auto start = high_resolution_clock::now(); 
-        State sol = variableNeighbourhoodDescent(5);
-        // State sol = simulatedAnnealing();
-        // State sol = geneticAlgorithm(2);
-        // State sol = hillClimbing(State(N));
+        State sol = null_state;
+        density = 2;
+        if(function_name=="simann")
+            sol = simulatedAnnealing(State(N));
+        else
+            cout<<"Wrong function!!\n";
+        
 
         // Get ending timepoint 
         auto stop = high_resolution_clock::now(); 
@@ -131,6 +137,7 @@ State TSP:: randomNeighbour(State S){
         for a give node, this returns the best neighbour
         The random neighbour is the one with minimum cost
     */
+    closed.clear();
     vector<State> neighbours = S.moveGen(closed, density);
     int rand_index = rand() % neighbours.size();
     return neighbours[rand_index];
@@ -145,61 +152,26 @@ bool TSP:: validateMove(State &node, State &newNode, int k){
     if(k != 0)
         prob = 1 - exp( deltaH / k * temperature );
     double p = double(rand())/double((RAND_MAX));
+
     return (p < prob);
 }
 
 State TSP::simulatedAnnealing(State node){
+    State bestNode = node;
     for(int k=0; k < iter_count; k++){
         State newNode = randomNeighbour(node);
         num_states++;
         if(validateMove(node, newNode, k))
             node = newNode;
+        if(heuristic(node) < heuristic(bestNode))
+            bestNode = node;
     }
-    return node;
+    return bestNode;
 }
 
 
 vector<State> TSP::makeMove(State A, State B){
     
-}
-
-State TSP::geneticAlgorithm(int beamSize){
-    //declare empty priority queue
-    priority_queue<State, vector<State>, function<bool(State, State)>> Q( [this](State l, State r) -> bool {// Lambda Comparator Constructor for function<>
-            // Min Priority Queue based on score
-            return (heuristic(l) > heuristic(r));
-    });
-    
-    State S(N);
-    // Push Source,
-    Q.push(S);
-    closed.insert(hash_value(S.places));
-    while(!Q.empty()){
-        S = Q.top();
-        Q.pop();
-        num_states++;
-        
-        if(goalTest(S)){
-            cout << "Goal Found!!!!!\n";
-            return S;
-        }
-
-        // generate moves and update closed set too
-        for(State T : makeMove(S, 2, beamSize))
-            Q.push(T);
-    }
-    return S;
-}
-
-
-State TSP:: variableNeighbourhoodDescent(int max_density){
-    State node = State(N);
-    for(int k = 2; k<=max_density && k<=N; k++){
-        // printf("Density: %d\n", k);
-        node = hillClimbing(node, k);
-        // printf("Num visited: %d\n\n", num_states);
-    }
-    return node;
 }
 
 int main(int argc, char** argv){
@@ -209,7 +181,7 @@ int main(int argc, char** argv){
     }
     TSP solver;
     solver.input(argv[1]);
-    solver.testPrint();
+    solver.testPrint("simann");
     return 0;
 }
 
