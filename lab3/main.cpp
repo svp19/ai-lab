@@ -30,7 +30,7 @@ class TSP{
     * makeChild
     * geneticAlgorithm, the actual function that does the traversal
 */
-    State makeChild(State &A, State &B);
+    State makeChild(State &A, State &B, string crossover);
     vs selectParents(vs &population);
     State geneticAlgorithm();
 
@@ -203,19 +203,29 @@ State TSP::simulatedAnnealing(){
 }
 
 
-State TSP::makeChild(State &A, State &B){
+State TSP::makeChild(State &A, State &B, string crossover="pmx"){
     vi child(N, -1);
     int index = 0;
-    // search for B[index] in A and copy it
-    while(child[index]==-1){
-        child[index] = A.places[index];
-        index = search(A.places, B.places[index]);
+    if(crossover == "pmx"){
+        // search for B[index] in A and copy it
+        while(child[index]==-1){
+            child[index] = A.places[index];
+            index = search(A.places, B.places[index]);
+        }
+
+        loop(i, N)
+            if(child[i]==-1)
+                child[i] = B.places[i];
+    } else if(crossover == "order"){
+        int start = rand()%N; 
+        int end = rand()%(N-start) + start;
+        child = vi(A.places.begin() + start, A.places.begin() + end);
+        loop(j, N){ // Add remaining cities in the order it occurs in B.
+            if(find(child.begin(), child.end(), B.places[j]) == child.end()){
+                child.push_back(B.places[j]);
+            }
+        }
     }
-
-    loop(i, N)
-        if(child[i]==-1)
-            child[i] = B.places[i];
-
     return State(child);
 }
 
@@ -287,11 +297,11 @@ State TSP:: geneticAlgorithm(){
 
     loop(i, k_max){
         vs selected = selectParents(population);
-        vs children;
         
+        vs children;
         loop(j, P/2){
-            children.push_back(makeChild(selected[j], selected[P/2+j]));
-            children.push_back(makeChild(selected[P/2+j], selected[j]));
+            children.push_back(makeChild(selected[j], selected[P/2+j], "order"));
+            children.push_back(makeChild(selected[P/2+j], selected[j], "order"));
         }
 
         sort(children.begin(), children.end(),[this](const State &a, const State &b){
@@ -322,6 +332,6 @@ int main(int argc, char** argv){
     TSP solver;
     solver.input(argv[1]);
     solver.testPrint("genAlg");
-    return 0;
+        return 0;
 }
 
