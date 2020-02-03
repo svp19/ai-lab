@@ -146,10 +146,13 @@ State TSP:: randomNeighbour(State S){
      *      State: a random neighbour of S
      * 
      */
-    closed.clear();
-    vs neighbours = S.moveGen(closed, density);
-    int rand_index = rand() % neighbours.size();
-    return neighbours[rand_index];
+    // closed.clear();
+    // vs neighbours = S.moveGen(closed, density);
+    // int rand_index = rand() % neighbours.size();
+    int a = rand()%N;
+    int b = rand()%N;
+    swap(S.places[a], S.places[b]);
+    return S;
 }
 
 
@@ -168,7 +171,7 @@ bool TSP:: validateMove(State &node, State &newNode, int k){
      *      Boolean: whether to consider newNode for next move
      * 
      */
-    double temperature = k_max/(k+1);
+    double temperature = 200*(1 - k/k_max);
     cout << "Temp: " << temperature << "\n";
     double deltaH = heuristic(node) - heuristic(newNode);
 
@@ -178,9 +181,8 @@ bool TSP:: validateMove(State &node, State &newNode, int k){
     double prob = 1;
     double p = double(rand())/double((RAND_MAX));
 
-    if(k != 0)
-        prob = 1/(1 + exp( -deltaH / k * temperature ));
-    cout << prob << "\n";
+    // if(k != 0)
+        prob = 1/(1 + exp( -deltaH / temperature ));
 
     return (p < prob);
 }
@@ -190,14 +192,18 @@ State TSP::simulatedAnnealing(){
     State node(N);
     State bestNode = node;
     for(int k=0; k < k_max; k++){
-        State newNode = randomNeighbour(node);
-        num_states++;
-        
-        if(validateMove(node, newNode, k))
-            node = newNode;
-        
-        if(heuristic(node) < heuristic(bestNode))
-            bestNode = node;
+        while(true){
+            State newNode = randomNeighbour(node);
+            num_states++;
+            
+            if(validateMove(node, newNode, k)){
+                node = newNode;
+                break;
+            }
+            
+            if(heuristic(node) < heuristic(bestNode))
+                bestNode = node;
+        }
     }
     return bestNode;
 }
@@ -273,7 +279,7 @@ State TSP:: geneticAlgorithm(){
     k_max = 100;
     int P = 5000;
     int k = 25 * P/100;
-    double mutation_prob = 0.005;
+    double mutation_prob = 0.05;
     vs population;
 
     loop(i, P){
