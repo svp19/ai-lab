@@ -44,7 +44,7 @@ class TSP{
 */
     
     State simulateAnt();
-    State updatePheromone();
+    void updatePheromone(vs ants);
     State antColonyOptimization();
 
 
@@ -320,40 +320,82 @@ State TSP:: geneticAlgorithm(){
     return *population.begin();
 }
 
-// State TSP:: antColonyOptimization(){
-//     int l = N/3;
-//     vs ants;
-//     State bestTour(N);
-//     loop(t, k_max){
-//         loop(i, l)
-//             ants.push_back(simulateAnt());
+State TSP:: antColonyOptimization(){
+    int l = N/3;
+    vs ants;
+    State bestTour(N);
+    loop(t, k_max){
+        loop(i, l)
+            ants.push_back(simulateAnt());
 
-//         State newBest = *max_element(ants.begin(), ants.end(), [this](const State &a, const State &b){
-//             return heuristic(a) < heuristic(b);
-//         });
+        State newBest = *max_element(ants.begin(), ants.end(), [this](const State &a, const State &b){
+            return heuristic(a) < heuristic(b);
+        });
 
-//         if(heuristic(bestTour) > heuristic(newBest))
-//             bestTour = newBest;
+        if(heuristic(bestTour) > heuristic(newBest))
+            bestTour = newBest;
 
-//         updatePheromone();
-//     }
-//     return bestTour;
-// }
+        updatePheromone(ants);
+    }
+    return bestTour;
+}
 
-// State TSP:: simulateAnt(){
-//     State ant(N);
-//     if(rand()%2 == 0)
-//         ant.places[0] = 0;
-//     else
-//         ant.places[0] = N/2;
+State TSP:: simulateAnt(){
+    int alpha = 1, beta = 2;
+    State ant(N);
+    if(rand()%2 == 0)
+        ant.places[0] = 0;
+    else
+        ant.places[0] = N/2;
     
-//     for(int i=1; i<N; i++){
-//         //choose ith city in the tour
-//         vi allowed_edges;
+    set<int> visited;
+    for(int i=1; i<N; i++){
+    //choose ith city in the tour
+        visited.insert(ant.places[i-1]);
+        int u = i-1;
+        // make allowed vertices
+        vi allowed_vertices;
+        loop(v, N){ 
+            if(visited.find(v) != visited.end()) continue;
+            allowed_vertices.push_back(v);
+        }
 
-//         vd cummulative_prob;
+        vd cummulative_prob;
+            // find the density
+        for(int v : allowed_vertices)
+            cummulative_prob.push_back(
+                pow(Tau[u][v], alpha) * pow(1/edges[u][v], beta)
+            );
         
-//     }
-    
+            // find the cummulative probs
+        for(int v=1; v<cummulative_prob.size(); v++)
+            cummulative_prob[v] += cummulative_prob[v-1];
+            
+            // normalize
+        loop(v,cummulative_prob.size())
+            cummulative_prob[v] /= cummulative_prob.back();
 
-// }
+        //roll and find an edge
+        double p = double(rand())/double((RAND_MAX));
+        int index = greatestLowerBound(cummulative_prob, p);
+        ant.places[i] = allowed_vertices[i];
+    }
+    return ant;
+}
+
+void TSP :: updatePheromone(vs ants){
+    double rho = 0.1;
+    double Q = 10;
+    loop(i, N)
+        loop(j, N){
+            //calculate delta Tau
+            double delta = 0;
+            for(State &ant : ants){ //ant is antk
+                int left = search(ant.places, i);
+                int right = (left+1)%N;
+                if(ant.places[right]==j)
+                    delta += Q / heuristic(ant);
+            }
+            Tau[i][j] = rho*Tau[i][j] + delta;
+        }
+}
