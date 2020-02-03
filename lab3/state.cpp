@@ -6,6 +6,7 @@ using namespace std;
 #define x first
 #define y second;
 #define vi vector<int>
+#define vd vector<double>
 #define vp vector<point>
 #define ss set<string>
 #define edge_t vector<vector<double>>
@@ -19,7 +20,7 @@ string hash_value(vi &arr){
     return s;
 }
 
-int greatedLowerBound(vector<int> &V, double p){
+int greatedLowerBound(vd &V, double p){
     int index = 0;
     int beg = 0, end =V.size()-1;
     while(beg<=end){
@@ -36,6 +37,13 @@ int greatedLowerBound(vector<int> &V, double p){
         }
     }
     return index;
+}
+
+int search(vi &arr, int key){
+    loop(i, arr.size())
+        if(arr[i] == key)
+            return i;
+    return -1;
 }
 
 class State{

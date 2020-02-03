@@ -12,7 +12,7 @@ class TSP{
     int num_states;
     int density;
     double k_max; // max iteration count
-    int heuristic(State S);
+    double heuristic(State S);
     bool goalTest(State S);
 /*
     Question 1:  Simulated Annealing
@@ -30,7 +30,7 @@ class TSP{
     * makeChild
     * geneticAlgorithm, the actual function that does the traversal
 */
-    State makeChild(State A, State B);
+    State makeChild(State &A, State &B);
     vs selectParents(vs &population);
     State geneticAlgorithm();
 
@@ -97,21 +97,21 @@ public:
 
         cout<<"Solution\t: ";
         sol.print();
-        printf("H. value\t: %d\n", heuristic(sol));
+        printf("H. value\t: %lf\n", heuristic(sol));
         printf("Visited\t\t: %d\n", num_states);
         printf("Time taken (micro s): %ld\n", duration.count());
     }
 };
 
 
-int TSP:: heuristic(State S){
+double TSP:: heuristic(State S){
     /*
         @params
             * State S, having the order to visit places
         @return
             * integer representing the cost of this path
     */
-    int path_cost = 0;
+    double path_cost = 0;
     for(int i=1; i<S.places.size(); i++){
         int u = S.places[i-1];
         int v = S.places[i];
@@ -203,13 +203,28 @@ State TSP::simulatedAnnealing(){
 }
 
 
-// State TSP::makeChild(State &A, State &B){
-    
-// }
+State TSP::makeChild(State &A, State &B){
+    vi child(N, -1);
+    int index = 0;
+    // search for B[index] in A and copy it
+    while(child[index]==-1){
+        child[index] = A.places[index];
+        index = search(A.places, B.places[index]);
+    }
+
+    loop(i, N)
+        if(child[i]==-1)
+            child[i] = B.places[i];
+
+    return State(child);
+}
+
+
 vs TSP:: selectParents(vs &population){
-    vi H;
-    for( State &parent: population)
-        H.push_back(heuristic(parent));
+    vd H;
+    loop(i, population.size())
+        H.push_back(heuristic(population[i]));
+
     int normalizer = accumulate(H.begin(), H.end(), 0);
     
     //normalize the probabilities
@@ -229,21 +244,72 @@ vs TSP:: selectParents(vs &population){
         //append that to the selected population
         selected.push_back(population[index]);
     }
-    sort(selected.begin(), selected.end(), [this](const State &a, const State &b){
-        return heuristic(a) < heuristic(b);
-    });
+    //Knuth shuffle
+    for(int i=H.size()-1; i>0; i--){
+        int r = rand()%i;
+        swap(selected[i], selected[r]);
+    }
+    
     return selected;
 }
+
 State TSP:: geneticAlgorithm(){
-    State node(N);
-    vs population = node.moveGen(closed, 2);
+    /*
+        hyper_parameters
+        * k_max : # of iterations  
+        * P : population size
+        * k : # of organisms to be replaced by children
+    */
+    k_max = 100;
+    int P = 5000;
+    int k = 15 * P/100;
+    vs population;
+
+    loop(i, P){
+        while(true){
+            State node(N);
+            //Knuth shuffle
+            for(int j=N-1; j>0; j--){
+                int r = rand()%j;
+                swap(node.places[j], node.places[r]);
+            }
+            string key = hash_value(node.places);
+            if(closed.find(key) != closed.end())
+                continue;
+            closed.insert(key);
+            population.push_back(node);
+            break;
+        }
+    }
     sort(population.begin(), population.end(), [this](const State &a, const State &b){
         return heuristic(a) < heuristic(b);
     });
+
     loop(i, k_max){
         vs selected = selectParents(population);
-        //page 132 in book;
+        vs children;
+        
+        loop(j, P/2){
+            children.push_back(makeChild(selected[j], selected[P/2+j]));
+            children.push_back(makeChild(selected[P/2+j], selected[j]));
+        }
 
+        sort(children.begin(), children.end(),[this](const State &a, const State &b){
+            return heuristic(a) < heuristic(b);
+        });
+        
+        //replace last k of population with first k children
+        int k = P *15/100; 
+        loop(j, k)
+            population[P-1-j] = children[j];
+
+        //sort the population according to heuristic
+        sort(population.begin(), population.end(),[this](const State &a, const State &b){
+            return heuristic(a) < heuristic(b);
+        });
+        double best = heuristic(population[0]);
+        double worst = heuristic(population[P-1]);
+        printf("Loop %d/%d (%lf, %lf)\n", i+1, (int)k_max, best, worst);
     }
     //return best among population
     return *population.begin();

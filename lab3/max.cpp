@@ -1,47 +1,27 @@
 #include <bits/stdc++.h>
 using namespace std;
-#define loop(i, n) for(int i=0; i<n; i++)
+#include "state.cpp"
+int N=8;
 
-class test{
-    public:
-        int value;
-        test(int t = 0){
-            value = t;
-        }
-        int square(){
-            return value*value;
-        }
-        int cube(){
-            return value*value*value;
-        }
-};
-
-bool comparator(const test &a, const test &b){
-    return a.value*a.value < b.value*b.value;
-}
-int greatedLowerBound(vector<int> V, int p){
+State makeChild(State &A, State &B){
+    vi child(N, -1);
     int index = 0;
-    int beg = 0, end =V.size()-1;
-    while(beg<=end){
-        int mid = (beg+end)/2;
-        if(V[mid]==p){
-            return mid;
-        }
-        else if(V[mid] < p){
-            index = mid;
-            beg = mid + 1;
-        }
-        else{
-            end = mid - 1;
-        }
+    // search for B[index] in A and copy it
+    while(child[index]==-1){
+        child[index] = A.places[index];
+        index = search(A.places, B.places[index]);
     }
-    return index;
+
+    loop(i, N)
+        if(child[i]==-1)
+            child[i] = B.places[i];
+
+    return State(child);
 }
+
 int main(){
-    vector<int> V = {1,20,35,44,73,90};
-    int p = 90;
-    cout<<greatedLowerBound(V, p)<<endl;
-    // test M = *max_element(V.begin(), V.end(), comparator);
-    // cout<<M.value<<endl;
+    State A ({0,1,2,3,4,5,6,7});
+    State B ({7,4,1,0,2,5,3,6});
+    makeChild(B,A).print(); 
     return 0;
 }
