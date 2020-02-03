@@ -14,6 +14,7 @@ class TSP{
     double k_max; // max iteration count
     double heuristic(State S);
     bool goalTest(State S);
+    vector<vd> Tau;
 /*
     Question 1:  Simulated Annealing
     *******************************************************
@@ -33,6 +34,18 @@ class TSP{
     State makeChild(State &A, State &B, string crossover);
     vs selectParents(vs &population);
     State geneticAlgorithm();
+
+/*
+    Question 3: Ant Colony
+    *******************************************************
+    consists of 2 functions
+    * makeChild
+    * geneticAlgorithm, the actual function that does the traversal
+*/
+    
+    State simulateAnt();
+    State updatePheromone();
+    State antColonyOptimization();
 
 
 public:
@@ -200,7 +213,7 @@ State TSP::makeChild(State &A, State &B, string crossover="pmx"){
 vs TSP:: selectParents(vs &population){
     vd H;
     loop(i, population.size())
-        H.push_back(heuristic(population[i]));
+        H.push_back(1/heuristic(population[i]));
 
     int normalizer = accumulate(H.begin(), H.end(), 0);
     
@@ -306,3 +319,41 @@ State TSP:: geneticAlgorithm(){
     //return best among population
     return *population.begin();
 }
+
+// State TSP:: antColonyOptimization(){
+//     int l = N/3;
+//     vs ants;
+//     State bestTour(N);
+//     loop(t, k_max){
+//         loop(i, l)
+//             ants.push_back(simulateAnt());
+
+//         State newBest = *max_element(ants.begin(), ants.end(), [this](const State &a, const State &b){
+//             return heuristic(a) < heuristic(b);
+//         });
+
+//         if(heuristic(bestTour) > heuristic(newBest))
+//             bestTour = newBest;
+
+//         updatePheromone();
+//     }
+//     return bestTour;
+// }
+
+// State TSP:: simulateAnt(){
+//     State ant(N);
+//     if(rand()%2 == 0)
+//         ant.places[0] = 0;
+//     else
+//         ant.places[0] = N/2;
+    
+//     for(int i=1; i<N; i++){
+//         //choose ith city in the tour
+//         vi allowed_edges;
+
+//         vd cummulative_prob;
+        
+//     }
+    
+
+// }
