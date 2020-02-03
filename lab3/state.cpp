@@ -20,7 +20,7 @@ string hash_value(vi &arr){
     return s;
 }
 
-int greatedLowerBound(vd &V, double p){
+int greatestLowerBound(vd &V, double p){
     int index = 0;
     int beg = 0, end =V.size()-1;
     while(beg<=end){

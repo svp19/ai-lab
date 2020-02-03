@@ -250,7 +250,7 @@ vs TSP:: selectParents(vs &population){
         //roll random number
         double p = double(rand())/double((RAND_MAX));
         //find the greatest lower bound of p in H
-        int index = greatedLowerBound(H, p);
+        int index = greatestLowerBound(H, p);
         //append that to the selected population
         selected.push_back(population[index]);
     }
@@ -272,7 +272,8 @@ State TSP:: geneticAlgorithm(){
     */
     k_max = 100;
     int P = 5000;
-    int k = 15 * P/100;
+    int k = 25 * P/100;
+    double mutation_prob = 0.005;
     vs population;
 
     loop(i, P){
@@ -304,6 +305,20 @@ State TSP:: geneticAlgorithm(){
             children.push_back(makeChild(selected[P/2+j], selected[j], "order"));
         }
 
+        //mutate a small portion of the population
+        loop(j, children.size()){
+            double p = double(rand())/double((RAND_MAX));
+            if(p < mutation_prob){
+                int mutation_extent = rand()%N;
+                loop(x, mutation_extent){
+                    int a = rand() % N;
+                    int b = rand() % N;
+                    swap(children[j].places[a], children[j].places[b]);
+                }
+            }
+        }
+
+
         sort(children.begin(), children.end(),[this](const State &a, const State &b){
             return heuristic(a) < heuristic(b);
         });
@@ -325,13 +340,13 @@ State TSP:: geneticAlgorithm(){
     return *population.begin();
 }
 int main(int argc, char** argv){
-    if(argc!=2){
+    if(argc!=3){
         cout<<"Error: "<<argv[0]<<" <input_file_path>\n";
         return 0;
     }
     TSP solver;
     solver.input(argv[1]);
-    solver.testPrint("genAlg");
+    solver.testPrint(argv[2]);
         return 0;
 }
 
