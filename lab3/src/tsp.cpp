@@ -99,11 +99,11 @@ void TSP:: testPrint(string function_name){
     auto stop = high_resolution_clock::now(); 
     auto duration = duration_cast<microseconds>(stop - start);
 
-    cout<<"Solution\t: ";
+    // cout<<"Solution\t: ";
+    printf("%lf\n", heuristic(sol));
     sol.print();
-    printf("H. value\t: %lf\n", heuristic(sol));
-    printf("Visited\t\t: %d\n", num_states);
-    printf("Time taken (micro s): %ld\n", duration.count());
+    // printf("Visited\t\t: %d\n", num_states);
+    // printf("Time taken (micro s): %ld\n", duration.count());
 }
 
 double TSP:: heuristic(State S){
@@ -147,7 +147,7 @@ bool TSP:: validateMove(State &node, State &newNode, int k, double &temperature)
      *  @Returns: Boolean: whether to consider newNode for next move
      */
     // temperature = k_max/(k+1);
-    cout << "Temp: " << temperature << "\n";
+    // cout << "Temp: " << temperature << "\n";
     double deltaH = heuristic(node) - heuristic(newNode);
 
     if(deltaH > 0) // If newNode better, choose it
@@ -158,7 +158,6 @@ bool TSP:: validateMove(State &node, State &newNode, int k, double &temperature)
 
     if(k != 0)
         prob = 1/(1 + exp( -deltaH / k * temperature ));
-    cout << prob << "\n";
 
     return (p < prob);
 }
@@ -178,6 +177,8 @@ State TSP::simulatedAnnealing(){
                 node = newNode;
                 if(heuristic(node) <= heuristic(bestNode)){
                     bestNode = node;
+                    printf("%lf\n", heuristic(bestNode));
+                    bestNode.print();
                 }
                 temperature = k_max/(k+1);
                 // temperature = k_max - k;
@@ -324,7 +325,9 @@ State TSP:: geneticAlgorithm(){
         });
         double best = heuristic(population[0]);
         double worst = heuristic(population[P-1]);
-        printf("Loop %d/%d (%lf, %lf)\n", i+1, (int)k_max, best, worst);
+        // printf("Loop %d/%d (%lf, %lf)\n", i+1, (int)k_max, best, worst);
+        printf("%lf\n", best);
+        population.begin()->print();
     }
     //return best among population
     return *population.begin();

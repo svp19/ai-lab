@@ -30,7 +30,7 @@ class AntColony(object):
                 if ant.cost_of_tour(self.distances) < self.best_cost:
                     self.best_cost = ant.cost_of_tour(self.distances)
                     self.best_tour = ant.path
-                    print(self.best_tour)
+                    print(*self.best_tour, sep=" ")
                     print(self.best_cost)
 
                 # Calc pheromones delta
