@@ -39,6 +39,27 @@ int greatestLowerBound(vd &V, double p){
     return index;
 }
 
+
+int lub(vd &V, double p){
+    int index = 0;
+    int beg = 0, end =V.size()-1;
+    while(beg<=end){
+        int mid = (beg+end)/2;
+        if(V[mid]==p){
+            return mid;
+        }
+        else if(V[mid] > p){
+            index = mid;
+            beg = mid + 1;
+        }
+        else{
+            end = mid - 1;
+        }
+    }
+    return index;
+}
+
+
 int search(vi &arr, int key){
     loop(i, arr.size())
         if(arr[i] == key)

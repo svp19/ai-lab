@@ -98,7 +98,7 @@ if __name__ == '__main__':
         distances.append(d)
     # print(distances)
 
-    aco = AntColony(distances, n_ants=20, max_iterations=30, alpha=4, beta=4, rho=0.4, Q=1)
+    aco = AntColony(distances, n_ants=100, max_iterations=50, alpha=8, beta=8, rho=0.2, Q=0.1)
     aco.optimize()
 
 

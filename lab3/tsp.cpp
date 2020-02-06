@@ -20,7 +20,7 @@ class TSP{
     *******************************************************
     Use priority queue as the OPEN set
 */
-    bool validateMove(State &node, State &newNode, int k);
+    bool validateMove(State &node, State &newNode, int k, double &temperature);
     State randomNeighbour(State S);
     State simulatedAnnealing();
 
@@ -135,7 +135,7 @@ State TSP:: randomNeighbour(State S){
 }
 
 
-bool TSP:: validateMove(State &node, State &newNode, int k){
+bool TSP:: validateMove(State &node, State &newNode, int k, double &temperature){
     /*
      *  Calculates whether next possible state (newNode) is taken using probability 
      *      temperature = k_max/(k+1)
@@ -146,7 +146,7 @@ bool TSP:: validateMove(State &node, State &newNode, int k){
      *           k(int): iteration number
      *  @Returns: Boolean: whether to consider newNode for next move
      */
-    double temperature = k_max/(k+1);
+    // temperature = k_max/(k+1);
     cout << "Temp: " << temperature << "\n";
     double deltaH = heuristic(node) - heuristic(newNode);
 
@@ -167,29 +167,36 @@ bool TSP:: validateMove(State &node, State &newNode, int k){
 State TSP::simulatedAnnealing(){
     State node(N);
     State bestNode = node;
+    double temperature = k_max;
     for(int k=0; k < k_max; k++){
         while(true){
+
             State newNode = randomNeighbour(node);
             num_states++;
             
-            if(validateMove(node, newNode, k)){
+            if(validateMove(node, newNode, k, temperature)){
                 node = newNode;
+                if(heuristic(node) <= heuristic(bestNode)){
+                    bestNode = node;
+                }
+                temperature = k_max/(k+1);
+                // temperature = k_max - k;
+                // temperature = .999 * temperature;
+                
                 break;
             }
             
-            if(heuristic(node) <= heuristic(bestNode)){
-                bestNode = node;
-            }
+            
         }
     }
     return bestNode;
 }
 
 
-State TSP::makeChild(State &A, State &B, string crossover="pmx"){
+State TSP::makeChild(State &A, State &B, string crossover="cyclic"){
     vi child(N, -1);
     int index = 0;
-    if(crossover == "pmx"){
+    if(crossover == "cyclic"){
         // search for B[index] in A and copy it
         while(child[index]==-1){
             child[index] = A.places[index];
@@ -255,7 +262,7 @@ State TSP:: geneticAlgorithm(){
         * k : # of organisms to be replaced by children
     */
     k_max = 100;
-    int P = 5000;
+    int P = 2500;
     int k = 25 * P/100;
     double mutation_prob = 0.005;
     vs population;
@@ -293,7 +300,7 @@ State TSP:: geneticAlgorithm(){
         loop(j, children.size()){
             double p = double(rand())/double((RAND_MAX));
             if(p < mutation_prob){
-                int mutation_extent = rand()%N;
+                int mutation_extent = 1;
                 loop(x, mutation_extent){
                     int a = rand() % N;
                     int b = rand() % N;
@@ -324,10 +331,12 @@ State TSP:: geneticAlgorithm(){
 }
 
 State TSP:: antColonyOptimization(){
-    int l = N/10;
+    int l = N;
+    // k_max = 500;
+    srand(time(0));
     State bestTour(N);
     loop(i, N)
-        Tau.push_back(vd(N, 10));
+        Tau.push_back(vd(N, 0.1));
     loop(t, k_max){
         vs ants;
         loop(i, l){
@@ -336,7 +345,7 @@ State TSP:: antColonyOptimization(){
                 bestTour = ants.back();
         }
         updatePheromone(ants);
-        printf("i: %d: %lf\n", t, heuristic(bestTour)/2);
+        printf("i: %d: %lf\n", t, heuristic(bestTour));
     }
     return bestTour;
 }
@@ -345,7 +354,7 @@ State TSP:: simulateAnt(int start){
     int alpha = 1, beta = 1;
     State ant(N);
     
-    ant.places[0] = start;
+    ant.places[0] = rand()%(N/3);
     set<int> visited;
     for(int i=1; i<N; i++){
     //choose ith city in the tour
@@ -360,33 +369,51 @@ State TSP:: simulateAnt(int start){
 
         vd cummulative_prob;
             // find the density
-        for(int v : allowed_vertices)
-            if( u != v )
-            cummulative_prob.push_back(
-                pow(Tau[u][v], alpha) * pow(1/edges[u][v], beta)
-            );
+        for(int v : allowed_vertices){
+            if( edges[u][v] != 0){
+                cummulative_prob.push_back(
+                    pow(Tau[u][v], alpha) * pow(1/edges[u][v], beta)
+                );
+            }
+        }
         
             // find the cummulative probs
-        for(int v=1; v<cummulative_prob.size(); v++)
-            cummulative_prob[v] += cummulative_prob[v-1];
 
+        // for(int v=1; v<cummulative_prob.size(); v++)
+        //     cummulative_prob[v] += cummulative_prob[v-1];
+        double sum = accumulate(cummulative_prob.begin(), cummulative_prob.end(), 0);
             // normalize
-        loop(v,cummulative_prob.size())
-            cummulative_prob[v] /= cummulative_prob.back();
+        // printf("Tau");
+        loop(v,cummulative_prob.size()){
+            // cummulative_prob[v] /= cummulative_prob.back();
+            cummulative_prob[v] /= sum;
+            // printf("%lf,  ", cummulative_prob[v]);
+        }
 
         //roll and find an edge
+        
         double p = (double)rand()/RAND_MAX;
-
-        int index = greatestLowerBound(cummulative_prob, p);
+        int index = 0; 
+        if(cummulative_prob.size() != 0)
+        while(true){
+            int r = rand()% cummulative_prob.size();
+            double pp = (double)rand()/RAND_MAX;
+            if(pp < cummulative_prob[r]){
+                index = r;
+                break;
+            }
+        }
+        // printf("\nRolled: %lf\n", p);
+        // int index = lub(cummulative_prob, p);
         ant.places[i] = allowed_vertices[index];
     }
-
+    // ant.print();
     return ant;
 }
 
 void TSP :: updatePheromone(vs ants){
     double rho = 0.8;
-    double Q = 10000;
+    double Q = 1;
     loop(i, N)
         loop(j, N){
             //calculate delta Tau
