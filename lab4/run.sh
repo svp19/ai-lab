@@ -1,0 +1,1 @@
+python3 ant_optimize.py $1
