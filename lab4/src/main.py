@@ -1,12 +1,14 @@
 import sys
 from queue import PriorityQueue
 from utils import Point
+import numpy as np
 
 class Astar(object):
     def __init__(self):
         self.N = 0
         self.V = []
         self.E = []
+        self.closed = set([])
 
     def goalTest(self, u):
         return u == self.N - 1
@@ -15,13 +17,21 @@ class Astar(object):
         return zip(range(self.N), self.E[u])
 
     def f(self, u):
-        return self.g(u) + self.h(u)
+        return self.g(u) + self.h2(u)
 
     def g(self, u):
         return self.V[u].value
 
-    def h(self, u):
+    
+    def h1(self, u):
+        return 10*self.V[u].distance(self.V[-1])
+
+    def h2 (self, u):
+        return np.exp(- self.V[u].distance(self.V[-1]) )
+
+    def h3(self, u):
         return self.V[u].distance(self.V[-1])
+
 
     def takeInput(self, filename):
         with open(filename, "r") as file:
@@ -40,14 +50,26 @@ class Astar(object):
         cost = sum(self.E[path[i-1]][path[i]] for i in range(1, len(path)))
         return cost, path
 
+    
+    def propagateImprovement(self, u):
+        for v, w in self.moveGen(u):
+            if w != 0: 
+                newVal = self.g(u) + w
+                if newVal < self.g(v):
+                    self.V[v].parent = u
+                    self.V[v].value = newVal
+                    if(v in self.closed):
+                        self.propagateImprovement(v)
+    
+
     def getShortestPath(self):
         """
             calculate the shortest path from vertex 0 and N-1
             returns cost, path
 
             g(u): path length from 0 to u
-            h(u): euclidean distance from u to goal
-            f(u) = g(u) + h(u), used as p in priority queue
+            h1(u): euclidean distance from u to goal
+            f(u) = g(u) + h1(u), used as p in priority queue
 
         """
         Q = PriorityQueue() # implemented with lazy update
@@ -55,7 +77,7 @@ class Astar(object):
         Q.put( (self.f(0), 0) )
 
         
-        closed = set([0])
+        self.closed = set([0])
         
         while not Q.empty():
             f, u = Q.get()
@@ -63,10 +85,10 @@ class Astar(object):
             if self.goalTest(u):
                 return self.reconstructPath()
             
-            closed.add(u)
+            self.closed.add(u)
 
             for v, w in self.moveGen(u):
-                if w != 0 and v not in closed:
+                if w != 0 and v not in self.closed:
                     # add to queue only if this reduces the path length
                     newValue = self.g(u) + w
                     
@@ -74,7 +96,15 @@ class Astar(object):
                         self.V[v].value = newValue
                         self.V[v].parent = u
                         Q.put( (self.f(v), v) )
-                    
+                
+                if w != 0 and v in self.closed:
+                    newValue = self.g(u) + w
+
+                    if newValue < self.g(v):
+                        self.V[v].parent = u
+                        self.V[v].value = newValue
+                        self.propagateImprovement(v)
+
 
     def testPrint(self, filename):
         self.takeInput(filename)
