@@ -1,1 +1,1 @@
-python3 ant_optimize.py $1
+python3 aco_optimized.py $1

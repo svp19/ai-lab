@@ -1,4 +1,5 @@
 import sys
+import time 
 import random
 
 class AntColony(object):
@@ -11,6 +12,8 @@ class AntColony(object):
         self.beta = beta
         self.rho = rho
         self.Q = Q
+        self.k_best = int(0.1*N)
+        self.recursive = False
         
         # Self Variables
         self.N = len(distances)
@@ -23,27 +26,39 @@ class AntColony(object):
         for i in range(self.max_iterations):
             
             # Simulate N ants
+            ants = []
+
             pheromones_delta = [[0 for x in range(N)] for y in range(N)]
             for j in range(self.n_ants):
                 ant = Ant(self.distances, self.pheromones, self.alpha, self.beta)
-                
+                ants.append(ant)
                 # Check if best tour
                 if ant.cost_of_tour(self.distances) < self.best_cost:
                     self.best_cost = ant.cost_of_tour(self.distances)
                     self.best_tour = ant.path
+                    self.last_update_time = time.time()
                     # print(*self.best_tour, sep=" ")
                     print(self.best_cost)
 
-                    # Calc pheromones delta
-                    for i, u in enumerate(ant.path):
-                        v = ant.path[(i+1)%N]
-                        pheromones_delta[u][v] += self.Q/distances[u][v]
-                
+            ants.sort(key=lambda x: x.cost_of_tour(self.distances))
+            # Calc pheromones delta
+            for ant in ants[:self.k_best]:
+                for i, u in enumerate(ant.path):
+                    v = ant.path[(i+1)%N]
+                    pheromones_delta[u][v] += self.Q/distances[u][v]
+                    
             # Update pheromones
             for u in range(N):
                 for v in range(N):
                     self.pheromones[u][v] = (1-self.rho)*self.pheromones[u][v] + pheromones_delta[u][v]
-        
+
+            if time.time() - self.last_update_time > 30 and not self.recursive:
+                self.alpha = 2
+                self.beta = 2
+                self.recursive = True
+                self.pheromones = [[0.1 for x in range(N)] for y in range(N)]
+                self.optimize()
+                break
 
 class Ant(object):
 
@@ -98,7 +113,7 @@ if __name__ == '__main__':
         distances.append(d)
     # print(distances)
 
-    aco = AntColony(distances, n_ants=N, max_iterations=100, alpha=3, beta=3, rho=0.1, Q=1)
+    aco = AntColony(distances, n_ants=int(N), max_iterations=2000, alpha=3, beta=3, rho=0.1, Q=0.1)
     # aco = AntColony(distances, n_ants=N, max_iterations=100, alpha=7, beta=7, rho=0.001, Q=0.002)
     aco.optimize()
 
