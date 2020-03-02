@@ -32,13 +32,13 @@ class SimulatedAnnealing(object):
             openSet = set( range(self.N) )
             u = start
             for _ in range(self.N):
-                v = max(openSet, key=lambda x: self.distances[u][x])
+                v = min(openSet, key=lambda x: self.distances[u][x])
                 sol.append(v)
                 openSet.remove(v)
                 u = v
             tours.append(sol)
         if r == 1:
-            return max(tours, key=lambda x: self.heuristic(x))
+            return min(tours, key=lambda x: self.heuristic(x))
         
         tours.sort(key=lambda x: self.heuristic(x))
         return tours[:r]
@@ -48,8 +48,9 @@ class SimulatedAnnealing(object):
         node = self.greedyOptim(1)
         self.bestTour = node
         self.bestCost = self.heuristic(node)
-        
-        for k in range(iter):
+        print(self.bestCost)
+
+        for k in range(1, iter+ 1):
             temp = 200
             while True:
                 newNode = node.copy()
@@ -64,15 +65,16 @@ class SimulatedAnnealing(object):
                     newCost = self.heuristic(node) 
                     if newCost < self.bestCost:
                         self.bestCost = newCost
-                        self.bestTour = node
+                        self.bestTour = node.copy()
                         print(self.bestCost)
                     break
 
                 else:
                     power = deltaH/( k * temp)
-                    p = np.exp( power)
+                    p = 1 / ( 1 + np.exp( power) )
                     # print(power)
                     if random.random() < p:
+                        del(node)
                         node = newNode
                 
                 temp = 0.99*temp
