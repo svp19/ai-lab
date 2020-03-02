@@ -40,6 +40,7 @@ class Astar(object):
             self.V = [ Point( *readLine(next(file)) ) for i in range(self.N) ]
             self.E = [ readLine(next(file)) for i in range(self.N) ]
 
+
     def reconstructPath(self):
         v = self.N - 1
         path = []
