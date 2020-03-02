@@ -34,10 +34,18 @@ class AntColony(object):
                     # print(*self.best_tour, sep=" ")
                     print(self.best_cost)
 
+<<<<<<< HEAD
                     # Calc pheromones delta
                     for i, u in enumerate(ant.path):
                         v = ant.path[(i+1)%N]
                         pheromones_delta[u][v] += self.Q/distances[u][v]
+=======
+                # Calc pheromones delta
+                pheromones_delta = [[0 for x in range(N)] for y in range(N)]
+                for i, u in enumerate(ant.path):
+                    v = ant.path[(i+1)%N]
+                    pheromones_delta[u][v] += self.Q/distances[u][v]
+>>>>>>> 87541a10b58700052dc63a97dcc25294cb33b035
                 
             # Update pheromones
             for u in range(N):
@@ -98,8 +106,12 @@ if __name__ == '__main__':
         distances.append(d)
     # print(distances)
 
+<<<<<<< HEAD
     aco = AntColony(distances, n_ants=N, max_iterations=100, alpha=3, beta=3, rho=0.1, Q=1)
     # aco = AntColony(distances, n_ants=N, max_iterations=100, alpha=7, beta=7, rho=0.001, Q=0.002)
+=======
+    aco = AntColony(distances, n_ants=N, max_iterations=int(10e10), alpha=8, beta=8, rho=0.1, Q=0.1)
+>>>>>>> 87541a10b58700052dc63a97dcc25294cb33b035
     aco.optimize()
 
 
