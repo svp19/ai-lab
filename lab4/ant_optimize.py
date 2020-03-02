@@ -30,8 +30,8 @@ class AntColony(object):
                 if ant.cost_of_tour(self.distances) < self.best_cost:
                     self.best_cost = ant.cost_of_tour(self.distances)
                     self.best_tour = ant.path
-                    print(*self.best_tour, sep=" ")
-                    # print(self.best_cost)
+                    # print(*self.best_tour, sep=" ")
+                    print(self.best_cost)
 
                 # Calc pheromones delta
                 pheromones_delta = [[0 for x in range(N)] for y in range(N)]
@@ -98,7 +98,7 @@ if __name__ == '__main__':
         distances.append(d)
     # print(distances)
 
-    aco = AntColony(distances, n_ants=N, max_iterations=50, alpha=8, beta=8, rho=0.1, Q=0.1)
+    aco = AntColony(distances, n_ants=N, max_iterations=int(10e10), alpha=8, beta=8, rho=0.1, Q=0.1)
     aco.optimize()
 
 
