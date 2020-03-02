@@ -23,7 +23,7 @@ class AntColony(object):
 
     
     def optimize(self):
-        for i in range(self.max_iterations):
+        while True:
             
             # Simulate N ants
             ants = []
@@ -37,8 +37,8 @@ class AntColony(object):
                     self.best_cost = ant.cost_of_tour(self.distances)
                     self.best_tour = ant.path
                     self.last_update_time = time.time()
-                    # print(*self.best_tour, sep=" ")
-                    print(self.best_cost)
+                    print(*self.best_tour, sep=" ")
+                    # print(self.best_cost)
 
             ants.sort(key=lambda x: x.cost_of_tour(self.distances))
             # Calc pheromones delta
@@ -113,7 +113,7 @@ if __name__ == '__main__':
         distances.append(d)
     # print(distances)
 
-    aco = AntColony(distances, n_ants=int(N), max_iterations=2000, alpha=3, beta=3, rho=0.1, Q=0.1)
+    aco = AntColony(distances, n_ants=int(N), max_iterations=200, alpha=3, beta=3, rho=0.1, Q=0.1)
     # aco = AntColony(distances, n_ants=N, max_iterations=100, alpha=7, beta=7, rho=0.001, Q=0.002)
     aco.optimize()
 
