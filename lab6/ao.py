@@ -6,52 +6,105 @@ class AOSearch():
 
     def __init__(self, dims):
         self.dims = dims
-        self.root = Node(indices=np.arange(len(dims)-1))
-        self.root.makeChildren()
+        self.root = Node(indices=np.arange(len(dims)-1), dims=dims)
+        self.Q = [] # Q of or nodes
 
 
     def run(self):
-        while(self.root.nodeType != T.SOLVED):
-            node = traceMarkedPath()
+        self.Q.append(self.root)
+        while(self.root.type != T.SOLVED):
+            # Get best leaf node to explore
+            node = self.Q[0]
+            self.Q.remove(node)
+            print("Exploring: ", *node.indices)
 
 
-    def traceMarkedPath(self, node):
-        explore = None
-        bestMinScore = float("inf")
+            # Make successors
+            if len(node.children) <= 0:
+                self.makeChildren(node)
 
-        # If current node is OR, return min AND child node
-        if node.nodeType == T.OR:
-            for child in node.children:
-                if h1(child) < bestMinScore:
-                    explore = child
-                    bestMinScore = h1(child)
-
-            if child.explored:
-                return traceMarkedPath(child)
-            return child
-
-        
-
-
-    def h1(self, node):
-        if len(node.indices) <= 0:
-            return 0
-        val = self.dims[0]
-        for i in node.indices:
-            print(i, self.dims[i])
-            val = val * self.dims[i+1]
-        return val/len(node.indices)
+            # Revise costs
+            self.reviseCosts(node)  
+        print(self.root.cost)
     
 
-    def h2(self, node):
-        if len(node.indices) <= 0:
-            return 0
-        val = self.dims[0]
-        for i in node.indices:
-            print(i, self.dims[i])
-            val = val * self.dims[i+1]
-        return val*len(node.indices)
+    def makeChildren(self, node):
+        '''
+         Assuming node is OR Node, add all possible AND node solutions, with their children OR Nodes
+        '''
+        indices = node.indices
+        N = len(indices)
+        if N <= 2:
+            return
+        # print("Child of: ", *indices)
+        for i in indices[:-1]:
+            
+            # Add new AND node as child to node
+            new_node = Node(indices=indices, dims=self.dims, node_type=T.AND, parent=node)
+            node.addChild(new_node)
 
+            # Create left OR Node
+            left_node = Node(indices=np.arange(indices[0], i+1), dims=self.dims, node_type=T.OR, parent=new_node)
+            new_node.addChild(left_node)
 
-AO = AOSearch([1, 2, 3, 4])
-print(AO.h1(AO.root))
+            # Create right OR Node
+            right_node = Node(indices=np.arange(i+1, indices[N-1] + 1), dims=self.dims, node_type=T.OR, parent=new_node)
+            new_node.addChild(right_node)
+            # print("L => ", left_node.indices, "R => ", right_node.indices)
+
+    def reviseCosts(self, current):
+        # if node is terminal, mark solved
+        if current.type == T.TERMINAL:
+            current.type = T.SOLVED
+            self.reviseCosts(current.parent.parent)
+            return
+        
+        min_cost = float("Inf")
+        prev_marked = current.marked_child
+
+        if current.type == T.OR:
+            # Explore AND node children of current
+            for node in current.children:
+                if node.type == T.AND:
+                    
+                    # Get left and right children of AND node
+                    left = node.children[0]
+                    right = node.children[1]
+
+                    # Get cost of multiply two childs
+                    mult_cost = self.dims[left.indices[0]] * self.dims[right.indices[0]] * self.dims[right.indices[-1] + 1]
+                    
+                    # Update cost of AND node
+                    node.cost = left.cost + right.cost + mult_cost
+
+                    # Update current's marked_child
+                    if node.cost < min_cost:
+                        min_cost = node.cost
+                        current.marked_child = node
+            
+            # Update OR node's cost with min_cost
+            current.cost = min_cost
+
+            # Remove prev_marked from list 
+            if prev_marked in self.Q:
+                self.Q.remove(prev_marked)
+
+            # Add child of marked AND node with higher cost to Q
+            if current.marked_child is not None:
+                left = current.marked_child.children[0]
+                right = current.marked_child.children[1]
+                if (left.cost >= right.cost or right.type == T.SOLVED) and left.type != T.SOLVED:
+                    self.Q.append(left)
+                if (right.cost >= left.cost or left.type == T.SOLVED) and right.type != T.SOLVED:
+                    self.Q.append(right)
+                
+                # Check if current is solved
+                if left.type == T.SOLVED and right.type == T.SOLVED:
+                    current.marked_child.type = T.SOLVED
+                    current.type = T.SOLVED
+            
+            if current.parent != None and current.parent.parent.marked_child == current.parent:
+                self.reviseCosts(current.parent.parent)
+
+AO = AOSearch([1, 2, 3, 4, 5])
+AO.run()

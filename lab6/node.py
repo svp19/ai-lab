@@ -1,47 +1,42 @@
 import enum
 import numpy as np
+from heuristics import h1, h2
+
 
 class T(enum.Enum):
     AND = 0
     OR = 1
     SOLVED = 2
+    TERMINAL = 3
+
 
 class Node():
     
-    def __init__(self, indices, nodeType=T.OR):
-        self.type = nodeType
+    def __init__(self, indices, dims, node_type=T.OR, parent=None):
+        self.type = node_type
         self.cost = float("Inf")
-        self.parent = None
+        self.parent = parent
         self.children = []
         self.indices = indices
-        self.bestChild = None
-        self.explored = False
- 
-    
+        self.marked_child = None
+        self.cost = self.getCost(dims)
+
+
+    def getCost(self, dims):
+         # If terminal node with single matrix, return 0
+        if len(self.indices) == 1:
+            self.type = T.TERMINAL
+            return 0
+
+        # If terminal node with two matrices, return cost of product
+        if len(self.indices) == 2:
+            self.type = T.TERMINAL
+            return dims[self.indices[0]] * dims[self.indices[1]] * dims[self.indices[1]+1]
+
+        # If non terminal node, get cost using heuristic
+        else:
+            return h1(self, dims)
+
+
     def addChild(self, child):
         self.children.append(child)
-
-
-    def makeChildren(self):
-        '''
-         Assuming self is OR Node, add all possible AND node solutions, with their children OR Nodes
-        '''
-        indices = self.indices
-        N = len(indices)
-        for i in indices[:-1]:
-            newNode = Node(indices=indices, nodeType=T.AND)
-            print("AND")
-
-            print("L:", np.arange(0, i+1))
-            # Create left OR Node
-            leftNode = Node(indices=np.arange(0, i+1), nodeType=T.OR)
-            leftNode.parent = newNode
-            newNode.addChild(leftNode)
-            
-            print("R:", np.arange(i+1, N))
-            # Create right OR Node
-            rightNode = Node(indices=np.arange(i+1, N), nodeType=T.OR)
-            rightNode.parent = newNode
-            newNode.addChild(rightNode)
-            self.addChild(newNode)
-
