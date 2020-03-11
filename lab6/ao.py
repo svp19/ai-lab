@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from node import Node
 from node import T
@@ -106,5 +107,10 @@ class AOSearch():
             if current.parent != None and current.parent.parent.marked_child == current.parent:
                 self.reviseCosts(current.parent.parent)
 
-AO = AOSearch([1, 2, 3, 4, 5])
-AO.run()
+if __name__ == '__main__':
+
+    with open(sys.argv[1], "r") as file:
+        input_dims = list(map(int, next(file).rstrip().split()))
+    print(input_dims)
+    AO = AOSearch(input_dims)
+    AO.run()

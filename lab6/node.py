@@ -35,7 +35,7 @@ class Node():
 
         # If non terminal node, get cost using heuristic
         else:
-            return h1(self, dims)
+            return h2(self, dims)
 
 
     def addChild(self, child):

@@ -47,11 +47,11 @@ void print_optimal_chain_order(int i, int j) {
  
 int main() {
     int i, j, n;
-    int a1[5]  = {1, 2, 3, 4, 5};
-    int a2[13] = {1, 5, 25, 30, 100, 70, 2, 1, 100, 250, 1, 1000, 2};
-    int a3[12] = {1000, 1, 500, 12, 1, 700, 2500, 3, 2, 5, 14, 10};
+    int a1[5]  = {5, 1, 4, 6, 7};
+    int a2[13] = {2, 7, 9, 8, 3, 6, 4};
+    int a3[12] = {3, 10, 23, 43, 56};
     int *dims_list[5] = {a1, a2, a3};
-    int sizes[3] = {5, 13, 12};
+    int sizes[3] = {5, 7, 5};
     for (i = 0; i < 3; ++i) {
         printf("Dims  : [");
         n = sizes[i];
