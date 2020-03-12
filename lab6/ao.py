@@ -15,9 +15,13 @@ class AOSearch():
         self.Q.append(self.root)
         while(self.root.type != T.SOLVED):
             # Get best leaf node to explore
+            
+            for n in self.Q:
+                print(n.indices[0], n.indices[-1], " => ", n.cost)
+            print()
+            
             node = self.Q[0]
             self.Q.remove(node)
-            print("Exploring: ", *node.indices)
 
 
             # Make successors
@@ -106,6 +110,12 @@ class AOSearch():
             
             if current.parent != None and current.parent.parent.marked_child == current.parent:
                 self.reviseCosts(current.parent.parent)
+
+    def printBrackets(self):
+        current = self.root
+        while current != None:
+            and_child = current.marked_child
+            
 
 if __name__ == '__main__':
 
