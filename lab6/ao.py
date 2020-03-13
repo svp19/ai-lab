@@ -12,17 +12,14 @@ class AOSearch():
 
 
     def run(self):
+        se = 0
         self.Q.append(self.root)
         while(self.root.type != T.SOLVED):
+            se = se + 1
             # Get best leaf node to explore
-            
-            for n in self.Q:
-                print(n.indices[0], n.indices[-1], " => ", n.cost)
-            print()
             
             node = self.Q[0]
             self.Q.remove(node)
-
 
             # Make successors
             if len(node.children) <= 0:
@@ -31,6 +28,7 @@ class AOSearch():
             # Revise costs
             self.reviseCosts(node)  
         print(self.root.cost)
+        print(f'Num explored: {se}')
     
 
     def makeChildren(self, node):
