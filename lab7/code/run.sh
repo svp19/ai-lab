@@ -1,4 +1,4 @@
-cd bots/Mybot
+cd bots/MyBot
 make clean
 make all
 cd ../..

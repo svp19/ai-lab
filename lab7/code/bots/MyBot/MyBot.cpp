@@ -36,7 +36,7 @@ class MyBot: public OthelloPlayer
          */
         virtual Move play(const OthelloBoard& board );
         virtual int minimax(OthelloBoard& board, Turn turn, int depth, Move move, int alpha, int beta);
-        virtual int heuristic( OthelloBoard &board, Turn turn, int mode );
+        virtual int heuristic( OthelloBoard &board, int mode );
     private:
         
 };
@@ -87,7 +87,7 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move, int alp
     list<Move> children = newBoard.getValidMoves(other(turn));
     
     if(depth == 0){
-        return heuristic(newBoard, turn, 3);
+        return heuristic(newBoard, 3);
     }
     
     if(this->turn == turn){ // minimizingPlayer, Note: Convention seems to be interchanged, but, turn updated after making move only 
@@ -121,28 +121,28 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move, int alp
 }
 
 
-int MyBot::heuristic( OthelloBoard &board, Turn turn, int mode ) {
-    int myCorners = 0, oppCorners = 0;
+int MyBot::heuristic( OthelloBoard &board, int mode ) {
     int x[] = {0, 0, 7, 7};
     int y[] = {0, 7, 0, 7};
-    int myMoves = board.getValidMoves(turn).size();
-    int oppMoves = board.getValidMoves(other(turn)).size();
-    
+    int myCorners = 0, oppCorners = 0;
+    int myMoves = board.getValidMoves(this->turn).size();
+    int oppMoves = board.getValidMoves(other(this->turn)).size();
+
     switch(mode){
         case 1: {// Coin Parity
-            if(turn == BLACK)
+            if(this->turn == BLACK)
                 return ( board.getBlackCount() - board.getRedCount() );
             return ( board.getRedCount() - board.getBlackCount() );
             break;
         }
 
         case 2: {// Corners Captured
-            for(int i=0; i<4; ++i)
+            for(int i=0; i<4; ++i){
                 if(board.get(x[i], y[i]) == this->turn)
                     myCorners ++;
-                else if(board.get(x[i], y[i]) == other(this->turn)){
+                else if(board.get(x[i], y[i]) == other(this->turn))
                     oppCorners++;
-                }
+            }
             return ( myCorners - oppCorners );
         }
 
