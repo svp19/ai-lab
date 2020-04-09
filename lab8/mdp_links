@@ -1,0 +1,14 @@
+Cat and Mouse: https://courses.csail.mit.edu/6.825/proj3_06/cat-and-mouse.html
+High and Low Card problem -http://inst.cs.berkeley.edu/~cs188/sp10/section_handouts/section5_solutions.pdf
+
+
+
+High Low Problem
+
+The game High-Low is a card game played with an infinite deck containing three types of cards: 2,3,4(, ie, three states). You start
+with a 3 showing(,ie, the start state), and say either higher or lower(2 actions - HIGH or LOW). Then, a new card is flipped; if you say higher and the new card
+is higher in value than your current card, you win the points shown on the new card. Similarly, if you say lower and
+the new card is lower in value than your current card, you win the points shown on the new card. If the new card is
+the same value as your current card, you don’t get any points. Otherwise, the game ends. Your current card is then
+discarded and the new card becomes your current card. An example of a game is [3, high, 4, low, 2, high, 3, low, 4, end]
+The deck contains different proportions of 2,3, and 4 cards, p2, p3, p4 respectively (where p2 + p3 + p4 = 1). 
