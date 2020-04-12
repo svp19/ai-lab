@@ -1,0 +1,4 @@
+(pick b)
+(stack b c)
+(pick a)
+(stack a b)
