@@ -46,16 +46,40 @@ def value_iteration(num_iters=100, epsilon=0.05, gamma=1):
 
 def policy_iteration(gamma=1):
     # Init values to zero
-    V = np.zeros(S.shape)
+    V = V_new = np.ones(S.shape)
     policy = np.zeros(S.shape)
-    V_new, policy_new = iter_update(V, gamma)
-    print(f"V: {V}, V':{V_new}\tPolicy: {policy_new}")
+    policy_new = np.ones(S.shape)
     
     # while np.linalg.norm(V_new-V) > epsilon:
-    while np.array_equal(policy, policy_new):
+    while not np.array_equal(policy, policy_new):
+        
+        # From previous iter
         V, policy = V_new, policy_new
-        V_new, policy_new = iter_update(V, gamma)
-        print(f"V: {V}, V':{V_new}\tPolicy: {policy_new}")
+        print(f"V: {V.T}, \tPolicy: {policy_new}")
+        
+        # Re-init
+        V_new = np.zeros(S.shape)
+        policy_new = np.zeros(S.shape)
+
+        # Policy Evaluation
+        A = np.multiply(gamma*np.ones(shape=(3,1)), P) - np.identity(3)
+        B = []
+        for s in S-2:
+            B.append(
+                np.sum(
+                    [ P[s_new] * (R(s, policy[2], s_new)) for s_new in S-2 ] # if choose LOW
+                )
+            )
+        B = -np.array(B).reshape(3, 1)
+        # V_new = np.linalg.solve(A, -B.T)
+        V_new = np.matmul(np.linalg.pinv(A), B)
+        V_new = V_new.reshape(1,3)[0]
+
+        # Policy Improvement
+        for s in S-2:
+            L_val = np.sum([ P[s_new] * (R(s, LOW, s_new) + gamma*V_new[s_new]) for s_new in S-2 ]) # if choose LOW
+            H_val = np.sum([ P[s_new] * (R(s, HIGH, s_new) + gamma*V_new[s_new]) for s_new in S-2 ]) # if choose HIGH
+            policy_new[s] = np.argmax([L_val, H_val])
 
 
 if __name__ == '__main__':
