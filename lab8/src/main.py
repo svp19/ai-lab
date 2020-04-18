@@ -31,7 +31,7 @@ def iter_update(V, gamma=1):
     return V_new, policy
 
 
-def value_iteration(num_iters=100, epsilon=0.05, gamma=1):
+def value_iteration(num_iters=10, epsilon=0.05, gamma=1):
     # Init values to zero
     V = np.zeros(S.shape)
     V_new, policy = iter_update(V, gamma)
@@ -41,7 +41,7 @@ def value_iteration(num_iters=100, epsilon=0.05, gamma=1):
         V = V_new
         V_new, policy = iter_update(V, gamma)
         num_iters -= 1
-        print(f"V: {V}, V':{V_new}\tPolicy: {policy}")
+        print(f"V: {V}, Policy: {policy}")
 
 
 def policy_iteration(gamma=1):
@@ -55,7 +55,7 @@ def policy_iteration(gamma=1):
         
         # From previous iter
         V, policy = V_new, policy_new
-        print(f"V: {V.T}, \tPolicy: {policy_new}")
+        print(f"Value: {V.T}, \tPolicy: {policy_new}")
         
         # Re-init
         V_new = np.zeros(S.shape)
@@ -85,5 +85,5 @@ def policy_iteration(gamma=1):
 if __name__ == '__main__':
     
     P, S = readInput(sys.argv[1])
-    value_iteration(gamma=0.5)
-    # policy_iteration(gamma=1)
+    # value_iteration(gamma=0.5)
+    policy_iteration(gamma=1)
