@@ -1,5 +1,5 @@
 -----------------------------------
-            Tree 1 Minimax
+            Tree 3 Minimax
 -----------------------------------
 Starting a new move...
 Exploring (2, 4) depth = 3, 3 #children

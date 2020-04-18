@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <limits.h>
 #include <chrono>
+#define GLOBAL_MODE 3
 
 using namespace std;
 using namespace Desdemona;
@@ -52,8 +53,9 @@ Move MyBot::play(const OthelloBoard& board)
     list<Move> moves = board.getValidMoves( turn );
     Move bestMove = *moves.begin();
     int bestScore = INT_MIN; 
-    int maxDepth = 0;
-    while(++maxDepth){// While 2 seconds not over || full board explored
+    int maxDepth = 3;
+    printf("Starting a new move...\n");
+    // while(++maxDepth){// While 2 seconds not over || full board explored
 
         for (Move move: moves) 
         {
@@ -71,7 +73,8 @@ Move MyBot::play(const OthelloBoard& board)
             
             
         } 
-    }
+    // }
+    printf("Chosing move (%d, %d) \n", bestMove.x, bestMove.y);
     return bestMove;
 }
 
@@ -87,9 +90,18 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move, int alp
     list<Move> children = newBoard.getValidMoves(other(turn));
     
     if(depth == 0){
-        return heuristic(newBoard, 3);
+        return heuristic(newBoard, GLOBAL_MODE);
     }
     
+    printf("Exploring (%d, %d) depth = %d, %d #children\n", move.x, move.y, depth, children.size());
+    int childNo = 0;
+    for( Move child: children){
+        OthelloBoard _newBoard = OthelloBoard(board);
+        _newBoard.makeMove(turn, move);
+        printf("Child %d -> (%d, %d) with hVal: %d\n", childNo, child.x, child.y, heuristic(_newBoard, GLOBAL_MODE));
+        childNo ++;
+    }
+
     if(this->turn == turn){ // minimizingPlayer, Note: Convention seems to be interchanged, but, turn updated after making move only 
         int best = INT_MAX;
         for (Move child: children) 

@@ -1,5 +1,5 @@
-cd bots/MinimaxBot
+cd bots/AlphaBetaBot
 make clean
 make all
 cd ../..
-./bin/Desdemona ./bots/MinimaxBot/minimax_bot.so ./bots/RandomBot/RandomBot.so
+./bin/Desdemona ./bots/AlphaBetaBot/AB_bot.so ./bots/RandomBot/RandomBot.so
