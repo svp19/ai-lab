@@ -52,8 +52,9 @@ Move MyBot::play(const OthelloBoard& board)
     list<Move> moves = board.getValidMoves( turn );
     Move bestMove = *moves.begin();
     int bestScore = INT_MIN; 
-    int maxDepth = 0;
-    while(++maxDepth){// While 2 seconds not over || full board explored
+    int maxDepth = 3;
+    printf("Starting a new move\n");
+    // while(++maxDepth){// While 2 seconds not over || full board explored
 
         for (Move move: moves) 
         {
@@ -71,7 +72,10 @@ Move MyBot::play(const OthelloBoard& board)
             
             
         } 
-    }
+
+
+    // }
+    printf("Done and chose %d, %d \n", bestMove.x, bestMove.y);
     return bestMove;
 }
 
@@ -90,16 +94,27 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move){
         return heuristic(newBoard, 3);
     }
     
+    printf("Root move %d, %d\n", move.x, move.y);
     if(this->turn == turn){ // minimizingPlayer, Note: Convention seems to be interchanged, but, turn updated after making move only 
         int best = INT_MAX;
+
         for (Move child: children) 
         {
             int val = minimax(newBoard, other(turn), depth-1, child);
-            best = min(val, best); 
+            best = min(val, best);
+            
+
             // beta = min(best, beta); 
             // if (beta <= alpha) 
             //     break;
         }  
+    
+        for( Move child: children){
+            OthelloBoard _newBoard = OthelloBoard(board);
+            _newBoard.makeMove(turn, move);
+            
+            printf("depth: %d, (%d, %d), hVal: %d\n", depth, child.x, child.y, heuristic(_newBoard, 3));
+        }
         return best;
     }
     else // maximizing player
@@ -108,14 +123,21 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move){
         for (Move child: children) 
         {
             int val = minimax(newBoard, other(turn), depth-1, child);
+            best = max(val, best);
+            // alpha = max(best, alpha);  
             if(val == INT_MIN){
                 return INT_MIN;
             }
-            best = max(val, best); 
-            // alpha = max(best, alpha);  
             // if (beta <= alpha) 
             //     break; 
-        }  
+        } 
+
+        for( Move child: children){
+            OthelloBoard _newBoard = OthelloBoard(board);
+            _newBoard.makeMove(turn, move);
+            
+            printf("depth: %d, (%d, %d), hVal: %d\n", depth, child.x, child.y, heuristic(_newBoard, 3));
+        }
         return best;
     }
 }

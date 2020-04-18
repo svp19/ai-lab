@@ -1,0 +1,5 @@
+rm -rf minimax_bot.so
+rm -rf *.o
+g++ -rdynamic -O0 -g  -Wall -I../../include/ -fPIC -c MyBot.cpp -o MyBot.o
+g++ -rdynamic -g -shared MyBot.o ../../lib/libOthello.so -o minimax_bot.so
+52
