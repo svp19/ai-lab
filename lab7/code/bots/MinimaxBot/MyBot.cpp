@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <limits.h>
 #include <chrono>
+#define GLOBAL_MODE 1
 
 using namespace std;
 using namespace Desdemona;
@@ -53,7 +54,7 @@ Move MyBot::play(const OthelloBoard& board)
     Move bestMove = *moves.begin();
     int bestScore = INT_MIN; 
     int maxDepth = 3;
-    printf("Starting a new move\n");
+    printf("Starting a new move...\n");
     // while(++maxDepth){// While 2 seconds not over || full board explored
 
         for (Move move: moves) 
@@ -75,7 +76,7 @@ Move MyBot::play(const OthelloBoard& board)
 
 
     // }
-    printf("Done and chose %d, %d \n", bestMove.x, bestMove.y);
+    printf("Chosing move (%d, %d) \n", bestMove.x, bestMove.y);
     return bestMove;
 }
 
@@ -91,12 +92,22 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move){
     list<Move> children = newBoard.getValidMoves(other(turn));
     
     if(depth == 0){
-        return heuristic(newBoard, 3);
+        return heuristic(newBoard, GLOBAL_MODE);
     }
     
-    printf("Root move %d, %d\n", move.x, move.y);
+    
+    printf("Exploring (%d, %d) depth = %d, %d #children\n", move.x, move.y, depth, children.size());
+    int childNo = 0;
+    for( Move child: children){
+        OthelloBoard _newBoard = OthelloBoard(board);
+        _newBoard.makeMove(turn, move);
+        printf("Child %d -> (%d, %d) with hVal: %d\n", childNo, child.x, child.y, heuristic(_newBoard, GLOBAL_MODE));
+        childNo ++;
+    }
+
     if(this->turn == turn){ // minimizingPlayer, Note: Convention seems to be interchanged, but, turn updated after making move only 
         int best = INT_MAX;
+
 
         for (Move child: children) 
         {
@@ -109,17 +120,13 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move){
             //     break;
         }  
     
-        for( Move child: children){
-            OthelloBoard _newBoard = OthelloBoard(board);
-            _newBoard.makeMove(turn, move);
-            
-            printf("depth: %d, (%d, %d), hVal: %d\n", depth, child.x, child.y, heuristic(_newBoard, 3));
-        }
+
         return best;
     }
     else // maximizing player
     {
         int best = INT_MIN;
+
         for (Move child: children) 
         {
             int val = minimax(newBoard, other(turn), depth-1, child);
@@ -132,12 +139,6 @@ int MyBot::minimax(OthelloBoard& board, Turn turn, int depth, Move move){
             //     break; 
         } 
 
-        for( Move child: children){
-            OthelloBoard _newBoard = OthelloBoard(board);
-            _newBoard.makeMove(turn, move);
-            
-            printf("depth: %d, (%d, %d), hVal: %d\n", depth, child.x, child.y, heuristic(_newBoard, 3));
-        }
         return best;
     }
 }
