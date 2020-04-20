@@ -36,7 +36,7 @@ class GSP():
 
     def printStack(self, filename="stack.tex"):
         # print("Stack:", file=open(filename, "a"))
-        print("\\item \\textbf{Stack:}  \\\\ \\noindent\\fbox{%\n\\parbox{\\textwidth}{%", file=open(filename, "a"))
+        # print("\\item \\textbf{Stack:}  \\\\ \\noindent\\fbox{%\n\\parbox{\\textwidth}{%", file=open(filename, "a"))
         for elem in self.stack:
             elem_type = elem[0] 
             clause = elem[1]
@@ -67,24 +67,27 @@ class GSP():
                     print("(",c[0], sep='', end=' ', file=open(filename, "a"))
                     print(*c[1], sep=' ', end='', file=open(filename, "a"))
                     print(")", end='$ ^ $' if clause[-1] != c else '\n', file=open(filename, "a"))
-        # print("}%\n}", file=open(filename, "a"))
+        print("}%\n}", file=open(filename, "a"))
         print(file=open(filename, "a"))
 
     def gsp(self, outputfile="output.txt"):
         # start state
         self.state.make(self.start)
-        
         # Push GOAL into empty stack
-        self.printTextStack()
+        self.printStack()
         stack = self.stack
         self.pushSet(CONJUNCT, self.goal)
 
         # While stack not empty
         while len(stack) != 0:
             x = stack.pop()
-            self.printTextStack()
-            print(x)
-            print(self.state.table)
+            
+            # print("\\item \\textbf{Stack:} pop()", file=open("stack.tex", "a"))
+            # print("\\\\ \\noindent\\fbox{%\n\\parbox{\\textwidth}{%", file=open("stack.tex", "a"))
+            
+            self.printStack()
+            # print(x)
+            # print(self.state.table)
             # qwe = input()
 
             # If ACTION popped, add to PLAN
@@ -115,6 +118,7 @@ class GSP():
                     return -1
                 self.pushSet(ACTION, action)
                 self.pushSet(CONJUNCT, self.state.getPreconditions(action))
+                # print(f"Pushed {action[0]} {action[1]} and preconditions", file=open("stack.tex", "a"))
         
         parser = Parser()
         print(parser.parsePlan(self.plan), file=open(outputfile, mode="w"))
@@ -144,9 +148,9 @@ class GSP():
                 return ['putdown', [x]]
             for stack in self.state.table:
                 if x in stack:
-                    y = stack[stack.index(x)-1]
-                    print("Ustack", x, y)
-                    return ['unstack', [y, x]]
+                    # y = stack[stack.index(x)-1]
+                    # print("Ustack", x, y)
+                    return ['unstack', [stack[-1], stack[-2]]]
             return None
         
         elif effect == 'AE':

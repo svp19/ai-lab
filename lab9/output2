@@ -1,5 +1,0 @@
-(stack a b)
-(unstack a b)
-(putdown a)
-(stack b c)
-(stack a b)
