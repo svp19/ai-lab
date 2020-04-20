@@ -32,6 +32,7 @@ class Parser():
             predicate = predicate.replace('(', '').replace(')', '').split(' ')
             predicate_clean = [predicate[0], predicate[1:]]
             predicates_clean.append(predicate_clean)
+        predicates_clean.reverse()
         return predicates_clean
 
 

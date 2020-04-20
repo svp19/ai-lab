@@ -22,6 +22,14 @@ def progress(self, action):
 
 ## ACTIONS
 def stack(self, x, y):
+    
+    for stack in self.table:
+        if x in stack:
+            if (stack[0]==x) and (len(stack)==1):
+                self.pick(x)
+            else:
+                self.unstack(stack[-1], stack[-2])
+    
     for block_stack in self.table:
         if y == block_stack[-1]:
             block_stack.append(x)

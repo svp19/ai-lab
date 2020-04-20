@@ -52,20 +52,40 @@ class GSP():
         print("}%\n}", file=open(filename, "a"))
         print(file=open(filename, "a"))
 
+    def printTextStack(self, filename="stack.txt"):
+        print("Stack:", file=open(filename, "a"))
+        # print("\\item \\textbf{Stack:}  \\\\ \\noindent\\fbox{%\n\\parbox{\\textwidth}{%", file=open(filename, "a"))
+        for elem in self.stack:
+            elem_type = elem[0] 
+            clause = elem[1]
+            if elem_type != CONJUNCT:
+                print("(",clause[0], sep='', end=' ', file=open(filename, "a"))
+                print(*clause[1], sep=' ', end='', file=open(filename, "a"))
+                print(")", end="\n", file=open(filename, "a"))
+            else:
+                for c in clause:
+                    print("(",c[0], sep='', end=' ', file=open(filename, "a"))
+                    print(*c[1], sep=' ', end='', file=open(filename, "a"))
+                    print(")", end='$ ^ $' if clause[-1] != c else '\n', file=open(filename, "a"))
+        # print("}%\n}", file=open(filename, "a"))
+        print(file=open(filename, "a"))
 
     def gsp(self, outputfile="output.txt"):
         # start state
         self.state.make(self.start)
         
         # Push GOAL into empty stack
-        self.printStack()
+        self.printTextStack()
         stack = self.stack
         self.pushSet(CONJUNCT, self.goal)
 
         # While stack not empty
         while len(stack) != 0:
             x = stack.pop()
-            self.printStack()
+            self.printTextStack()
+            print(x)
+            print(self.state.table)
+            # qwe = input()
 
             # If ACTION popped, add to PLAN
             if x[0] == ACTION:
@@ -120,10 +140,13 @@ class GSP():
         
         elif effect == 'clear':
             x = args[0]
+            if self.state.arm == x:
+                return ['putdown', [x]]
             for stack in self.state.table:
                 if x in stack:
                     y = stack[stack.index(x)-1]
-                    return ['unstack', [x, y]]
+                    print("Ustack", x, y)
+                    return ['unstack', [y, x]]
             return None
         
         elif effect == 'AE':
