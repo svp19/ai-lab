@@ -1,8 +1,8 @@
 # GOAL STATE PLANNING (Blocks World Domain)
 
-Source code in `src`.
+Source code in `src/`.
 Report - `report.pdf`.
-Input/Output files in `testcases`.
+Input/Output files in `testcases/`.
 
 ## Steps to Run
 

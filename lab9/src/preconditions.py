@@ -12,19 +12,19 @@ def getPreconditions(self, action):
     
     precond_dict = {
         'stack': [
-            [ 'clear', [x] ], 
-            [ 'clear', [y] ],
             [ 'AE', [] ], 
+            [ 'clear', [y] ],
+            [ 'clear', [x] ], 
         ],
         'unstack': [
-            [ 'on', [x, y] ],
-            [ 'clear', [x] ],
             [ 'AE', [] ],
+            [ 'clear', [x] ],
+            [ 'on', [x, y] ],
         ],
         'pick': [
-            [ 'ontable', [x] ],
-            [ 'clear', [x] ],
             [ 'AE', [] ],
+            [ 'clear', [x] ],
+            [ 'ontable', [x] ],
         ],
         'putdown': [
             [ 'hold', [x] ]

@@ -67,8 +67,8 @@ class GSP():
                     print("(",c[0], sep='', end=' ', file=open(filename, "a"))
                     print(*c[1], sep=' ', end='', file=open(filename, "a"))
                     print(")", end='$ ^ $' if clause[-1] != c else '\n', file=open(filename, "a"))
-        print("}%\n}", file=open(filename, "a"))
-        print(file=open(filename, "a"))
+        print("}%\n}\n}\n}", file=open(filename, "a"))
+        print("", file=open(filename, "a"))
 
     def gsp(self, outputfile="output.txt"):
         # start state
@@ -82,8 +82,8 @@ class GSP():
         while len(stack) != 0:
             x = stack.pop()
             
-            # print("\\item \\textbf{Stack:} pop()", file=open("stack.tex", "a"))
-            # print("\\\\ \\noindent\\fbox{%\n\\parbox{\\textwidth}{%", file=open("stack.tex", "a"))
+            print("\\item \\textbf{Stack:} pop()", file=open("stack.tex", "a"))
+            print("\\\\ \\noindent\\fbox{%\n\\parbox{\\textwidth}{%", file=open("stack.tex", "a"))
             
             self.printStack()
             # print(x)
@@ -118,7 +118,7 @@ class GSP():
                     return -1
                 self.pushSet(ACTION, action)
                 self.pushSet(CONJUNCT, self.state.getPreconditions(action))
-                # print(f"Pushed {action[0]} {action[1]} and preconditions", file=open("stack.tex", "a"))
+                print(f"Pushed {action[0]} {action[1]} and preconditions", file=open("stack.tex", "a"))
         
         parser = Parser()
         print(parser.parsePlan(self.plan), file=open(outputfile, mode="w"))
